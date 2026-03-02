@@ -1,4 +1,9 @@
-use std::{fs::File, io::Write};
+use std::{
+    fs::{self, File},
+    io::Write,
+};
+
+use image::RgbImage;
 
 struct RGB {
     red: u8,
@@ -21,31 +26,16 @@ fn main() {
         }
         raster
     };
-    write_ppm("test", width, height, max_val, test_raster);
+    write_bmp("test", width, height, &test_raster);
 }
 
-fn write_ppm(name: &str, width: u32, height: u32, max_val: u16, raster: Vec<RGB>) {
-    let header_row = "P3\n".to_string();
-    let width_height_row = format!("{} {}\n", width, height);
-    let max_val_row = format!("{}\n", max_val);
-    let raster_row: String = {
-        let mut rows = Vec::new();
-        for i in 0..height {
-            let mut row = Vec::new();
-            for j in 0..width {
-                let index = i * width + j;
-                let raster_color = &raster[index as usize];
-                row.push(format!(
-                    "{} {} {}",
-                    raster_color.red, raster_color.green, raster_color.blue
-                ));
-            }
-            rows.push(row.join(" "));
-        }
-        rows.join("\n")
-    };
-    let output = [header_row, width_height_row, max_val_row, raster_row].join("");
-    let path = format!(".output/{}.ppm", name);
-    let mut output_file = File::create(path).unwrap();
-    write!(output_file, "{}", output);
+fn write_bmp(name: &str, width: u32, height: u32, raster: &[RGB]) {
+    let bytes: Vec<u8> = raster
+        .iter()
+        .flat_map(|pixel| [pixel.red, pixel.green, pixel.blue])
+        .collect();
+    let img = RgbImage::from_raw(width, height, bytes).unwrap();
+    fs::create_dir_all(".output").unwrap();
+    let path = format!(".output/{}.bmp", name);
+    img.save(path).unwrap();
 }
