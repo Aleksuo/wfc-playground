@@ -54,6 +54,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn overlap_model(img: DynamicImage) -> (Vec<u16>, HashMap<(u16, Direction), HashSet<u16>>) {
     let (width, height, sample) = sample_dynamic_image(&img);
     print_sampled_input(width, height, &sample);
+    let frequency_hints = calculate_frequency_hints(&sample);
+    print_frequency_hints(&frequency_hints);
     let adjadency_rules = recognize_adjadency_rules(width, height, &sample);
     print_adjadency_rule(&adjadency_rules);
     (sample, adjadency_rules)
@@ -77,6 +79,19 @@ fn sample_dynamic_image(img: &DynamicImage) -> (u32, u32, Vec<u16>) {
         sample[index as usize] = k as u16;
     }
     (width, height, sample)
+}
+
+fn calculate_frequency_hints(sample_arr: &Vec<u16>) -> HashMap<u16, u32> {
+    let mut frequency_hints: HashMap<u16, u32> = HashMap::new();
+    for val in sample_arr {
+        let maybe_cur_freq = frequency_hints.get(val);
+        if let Some(cur_freq) = maybe_cur_freq {
+            frequency_hints.insert(*val, *cur_freq + 1);
+        } else {
+            frequency_hints.insert(*val, 1);
+        }
+    }
+    frequency_hints
 }
 
 fn recognize_adjadency_rules(
@@ -135,9 +150,16 @@ fn print_sampled_input(width: u32, height: u32, sample_arr: &Vec<u16>) {
     }
 }
 
+fn print_frequency_hints(frequency_hints: &HashMap<u16, u32>) {
+    println!("Printing frequencies:");
+    for freq in frequency_hints.iter().enumerate() {
+        println!("{:?}", freq.1);
+    }
+}
+
 fn print_adjadency_rule(adj_rules: &HashMap<(u16, Direction), HashSet<u16>>) {
     println!("Printing found rules:");
     for rule in adj_rules.iter().enumerate() {
-        println!("{:?}", rule.1)
+        println!("{:?}", rule.1);
     }
 }
