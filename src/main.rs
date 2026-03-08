@@ -47,18 +47,24 @@ impl ops::Add<Vec2> for Vec2 {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let input_img = ImageReader::open("./input/test_input.bmp")?.decode()?;
-    let (_sample_map, _adjadency_rules) = overlap_model(input_img);
+    let (_sample_map, _adjadency_rules, _frequency_hints) = overlap_model(input_img);
     Ok(())
 }
 
-fn overlap_model(img: DynamicImage) -> (Vec<u16>, HashMap<(u16, Direction), HashSet<u16>>) {
+fn overlap_model(
+    img: DynamicImage,
+) -> (
+    Vec<u16>,
+    HashMap<(u16, Direction), HashSet<u16>>,
+    HashMap<u16, u32>,
+) {
     let (width, height, sample) = sample_dynamic_image(&img);
     print_sampled_input(width, height, &sample);
     let frequency_hints = calculate_frequency_hints(&sample);
     print_frequency_hints(&frequency_hints);
     let adjadency_rules = recognize_adjadency_rules(width, height, &sample);
     print_adjadency_rule(&adjadency_rules);
-    (sample, adjadency_rules)
+    (sample, adjadency_rules, frequency_hints)
 }
 
 fn sample_dynamic_image(img: &DynamicImage) -> (u32, u32, Vec<u16>) {
