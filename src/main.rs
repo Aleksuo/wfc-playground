@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{HashMap, HashSet, VecDeque},
     hash::Hash,
     ops, vec,
 };
@@ -13,6 +13,13 @@ enum Direction {
     Right,
     Left,
 }
+
+static ALL_DIRECTIONS: [Direction; 4] = [
+    Direction::Up,
+    Direction::Down,
+    Direction::Left,
+    Direction::Right,
+];
 
 fn get_dir_vecs() -> HashMap<Direction, Vec2> {
     HashMap::from([
@@ -35,6 +42,41 @@ impl Vec2 {
     }
 }
 
+type AdjadencyRules = HashMap<(u16, Direction), HashSet<u16>>;
+type FrequencyHints = HashMap<u16, u32>;
+
+struct WfcState {
+    cells: Vec<Cell>,
+    uncollapsed_num: u32,
+    adjadency_rules: AdjadencyRules,
+    frequency_hints: FrequencyHints,
+}
+
+impl WfcState {
+    fn get_sampled_output(self) -> Vec<u16> {
+        self.cells
+            .iter()
+            .map(|cell| cell.collapsed_val.unwrap())
+            .collect()
+    }
+}
+
+struct Cell {
+    possible_values: HashSet<u16>,
+    collapsed_val: Option<u16>,
+    entropy: u16,
+    is_collapsed: bool,
+}
+
+impl Cell {
+    fn collapse(&mut self) {
+        let val = self.possible_values.iter().next().unwrap().clone();
+        self.possible_values = HashSet::from([val]);
+        self.collapsed_val = Some(val);
+        self.is_collapsed = true;
+    }
+}
+
 impl ops::Add<Vec2> for Vec2 {
     type Output = Vec2;
     fn add(self, rhs: Vec2) -> Self::Output {
@@ -47,17 +89,131 @@ impl ops::Add<Vec2> for Vec2 {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let input_img = ImageReader::open("./input/test_input.bmp")?.decode()?;
-    let (_sample_map, _adjadency_rules, _frequency_hints) = overlap_model(input_img);
+    let (sample_map, adjadency_rules, frequency_hints) = overlap_model(input_img);
+    let output = wfc(256, 256, &adjadency_rules, &frequency_hints, 6);
+
     Ok(())
 }
 
-fn overlap_model(
-    img: DynamicImage,
-) -> (
-    Vec<u16>,
-    HashMap<(u16, Direction), HashSet<u16>>,
-    HashMap<u16, u32>,
-) {
+/*
+fn reconstruct_image(output_height: u32, output_width: u32, output_samples: Vec<u16>, sample_map: Vec<u16>) {
+
+}*/
+
+fn wfc(
+    output_width: u32,
+    output_height: u32,
+    adj_rules: &HashMap<(u16, Direction), HashSet<u16>>,
+    frequency_hints: &FrequencyHints,
+    max_val: u16,
+) -> Vec<u16> {
+    let mut state = WfcState {
+        cells: Vec::new(),
+        uncollapsed_num: output_width * output_height,
+        adjadency_rules: adj_rules.clone(),
+        frequency_hints: frequency_hints.clone(),
+    };
+    let possible_values = HashSet::from_iter(0..=max_val);
+    for _ in 0..(output_height * output_width) {
+        state.cells.push(Cell {
+            possible_values: possible_values.clone(),
+            entropy: possible_values.len() as u16,
+            is_collapsed: false,
+            collapsed_val: None,
+        });
+    }
+
+    while state.uncollapsed_num > 0 {
+        println!("{}", state.uncollapsed_num);
+        // Find a cell to collapse
+        let cell_to_collapse_idx = state
+            .cells
+            .iter()
+            .enumerate()
+            .filter(|(_, c)| !c.is_collapsed)
+            .min_by(|(_, a), (_, b)| a.entropy.partial_cmp(&b.entropy).unwrap())
+            .map(|(i, _)| i)
+            .unwrap();
+        state.cells[cell_to_collapse_idx].collapse();
+        state.uncollapsed_num -= 1;
+        // Init propagation queue with the collapsed cell
+        let mut propagation_queue: VecDeque<usize> = VecDeque::new();
+        propagation_queue.push_back(cell_to_collapse_idx);
+        // While propagation queue is not empty propagate
+        while let Some(next_prop) = propagation_queue.pop_front() {
+            let next_cell = &state.cells[next_prop];
+            let mut union_map: HashMap<Direction, HashSet<u16>> = HashMap::from([
+                (Direction::Up, HashSet::new()),
+                (Direction::Right, HashSet::new()),
+                (Direction::Left, HashSet::new()),
+                (Direction::Down, HashSet::new()),
+            ]);
+            // Construct union map of all possible values in each direction for the cell
+            for (_, possible) in next_cell.possible_values.iter().enumerate() {
+                for direction in ALL_DIRECTIONS {
+                    let dir_set = union_map.get_mut(&direction).unwrap();
+                    if let Some(possible_adj) = state.adjadency_rules.get(&(*possible, direction)) {
+                        dir_set.extend(possible_adj);
+                    }
+                }
+            }
+            // Iterate neigbors and intersect with the union set
+            for (dir, neighbor_idx) in get_neighbor_indices(next_prop, output_width, output_height)
+            {
+                let neighbor_cell = &mut state.cells[neighbor_idx];
+                if neighbor_cell.is_collapsed {
+                    continue;
+                }
+                let dir_union = union_map.get(&dir).unwrap();
+                let possible_val_len = neighbor_cell.possible_values.len();
+                // println!("Union {:?} {:?}", &dir, &union_map.get(&dir));
+                // println!("Neighbor possible: {:?}", &neighbor_cell.possible_values);
+                neighbor_cell.possible_values = neighbor_cell
+                    .possible_values
+                    .intersection(dir_union)
+                    .cloned()
+                    .collect();
+
+                let new_possible_val_len = neighbor_cell.possible_values.len();
+                neighbor_cell.entropy = new_possible_val_len as u16;
+                if new_possible_val_len == 0 {
+                    // TODO: Implement handling for contradictions
+                    panic!("Contradiction");
+                } else if new_possible_val_len == 1 && !neighbor_cell.is_collapsed {
+                    neighbor_cell.collapse();
+                    state.uncollapsed_num -= 1;
+                    if state.uncollapsed_num != 0 {
+                        propagation_queue.push_back(neighbor_idx);
+                    }
+                } else if possible_val_len > neighbor_cell.possible_values.len() {
+                    propagation_queue.push_back(neighbor_idx);
+                }
+            }
+        }
+    }
+    state.get_sampled_output()
+}
+
+fn get_neighbor_indices(index: usize, width: u32, height: u32) -> Vec<(Direction, usize)> {
+    let x = (index as u32) % width;
+    let y = (index as u32) / width;
+    let mut neighbors = Vec::new();
+    if x > 0 {
+        neighbors.push((Direction::Left, index - 1));
+    }
+    if x + 1 < width {
+        neighbors.push((Direction::Right, index + 1));
+    }
+    if y > 0 {
+        neighbors.push((Direction::Up, index - width as usize));
+    }
+    if y + 1 < height {
+        neighbors.push((Direction::Down, index + width as usize));
+    }
+    neighbors
+}
+
+fn overlap_model(img: DynamicImage) -> (Vec<u16>, AdjadencyRules, FrequencyHints) {
     let (width, height, sample) = sample_dynamic_image(&img);
     print_sampled_input(width, height, &sample);
     let frequency_hints = calculate_frequency_hints(&sample);
@@ -87,8 +243,8 @@ fn sample_dynamic_image(img: &DynamicImage) -> (u32, u32, Vec<u16>) {
     (width, height, sample)
 }
 
-fn calculate_frequency_hints(sample_arr: &Vec<u16>) -> HashMap<u16, u32> {
-    let mut frequency_hints: HashMap<u16, u32> = HashMap::new();
+fn calculate_frequency_hints(sample_arr: &Vec<u16>) -> FrequencyHints {
+    let mut frequency_hints: FrequencyHints = HashMap::new();
     for val in sample_arr {
         let maybe_cur_freq = frequency_hints.get(val);
         if let Some(cur_freq) = maybe_cur_freq {
@@ -100,13 +256,9 @@ fn calculate_frequency_hints(sample_arr: &Vec<u16>) -> HashMap<u16, u32> {
     frequency_hints
 }
 
-fn recognize_adjadency_rules(
-    width: u32,
-    height: u32,
-    samples: &Vec<u16>,
-) -> HashMap<(u16, Direction), HashSet<u16>> {
+fn recognize_adjadency_rules(width: u32, height: u32, samples: &Vec<u16>) -> AdjadencyRules {
     let dir_vecs = get_dir_vecs();
-    let mut adjadency_map: HashMap<(u16, Direction), HashSet<u16>> = HashMap::new();
+    let mut adjadency_map: AdjadencyRules = HashMap::new();
     for i in 0..height {
         for j in 0..width {
             let cur_pos = Vec2::new(j as i32, i as i32);
@@ -156,14 +308,14 @@ fn print_sampled_input(width: u32, height: u32, sample_arr: &Vec<u16>) {
     }
 }
 
-fn print_frequency_hints(frequency_hints: &HashMap<u16, u32>) {
+fn print_frequency_hints(frequency_hints: &FrequencyHints) {
     println!("Printing frequencies:");
     for freq in frequency_hints.iter().enumerate() {
         println!("{:?}", freq.1);
     }
 }
 
-fn print_adjadency_rule(adj_rules: &HashMap<(u16, Direction), HashSet<u16>>) {
+fn print_adjadency_rule(adj_rules: &AdjadencyRules) {
     println!("Printing found rules:");
     for rule in adj_rules.iter().enumerate() {
         println!("{:?}", rule.1);
