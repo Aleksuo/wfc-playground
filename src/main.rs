@@ -4,7 +4,7 @@ use std::{
     ops, vec,
 };
 
-use image::{DynamicImage, ImageReader, Rgb};
+use image::{DynamicImage, ImageBuffer, ImageReader, Rgb, RgbImage};
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 enum Direction {
@@ -88,17 +88,40 @@ impl ops::Add<Vec2> for Vec2 {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let input_img = ImageReader::open("./input/test_input.bmp")?.decode()?;
-    let (sample_map, adjadency_rules, frequency_hints) = overlap_model(input_img);
-    let output = wfc(256, 256, &adjadency_rules, &frequency_hints, 6);
-
+    let input_img = ImageReader::open("./input/beach.bmp")?.decode()?;
+    let (palette, adjadency_rules, frequency_hints) = overlap_model(input_img);
+    let output_width = 256;
+    let output_height = 256;
+    let max_val = (palette.len() - 1) as u16;
+    let output = wfc(
+        output_width,
+        output_height,
+        &adjadency_rules,
+        &frequency_hints,
+        max_val,
+    );
+    let img = reconstruct_image(&output, output_width, output_height, &palette);
+    std::fs::create_dir_all(".output")?;
+    img.save(".output/output.bmp")?;
     Ok(())
 }
 
-/*
-fn reconstruct_image(output_height: u32, output_width: u32, output_samples: Vec<u16>, sample_map: Vec<u16>) {
-
-}*/
+fn reconstruct_image(
+    output: &Vec<u16>,
+    width: u32,
+    height: u32,
+    palette: &Vec<Rgb<u8>>,
+) -> RgbImage {
+    let mut img = ImageBuffer::new(width, height);
+    for y in 0..height {
+        for x in 0..width {
+            let idx = (x + y * width) as usize;
+            let color = palette[output[idx] as usize];
+            img.put_pixel(x, y, color);
+        }
+    }
+    img
+}
 
 fn wfc(
     output_width: u32,
@@ -213,34 +236,33 @@ fn get_neighbor_indices(index: usize, width: u32, height: u32) -> Vec<(Direction
     neighbors
 }
 
-fn overlap_model(img: DynamicImage) -> (Vec<u16>, AdjadencyRules, FrequencyHints) {
-    let (width, height, sample) = sample_dynamic_image(&img);
+fn overlap_model(img: DynamicImage) -> (Vec<Rgb<u8>>, AdjadencyRules, FrequencyHints) {
+    let (width, height, sample, palette) = sample_dynamic_image(&img);
     print_sampled_input(width, height, &sample);
     let frequency_hints = calculate_frequency_hints(&sample);
     print_frequency_hints(&frequency_hints);
     let adjadency_rules = recognize_adjadency_rules(width, height, &sample);
     print_adjadency_rule(&adjadency_rules);
-    (sample, adjadency_rules, frequency_hints)
+    (palette, adjadency_rules, frequency_hints)
 }
 
-fn sample_dynamic_image(img: &DynamicImage) -> (u32, u32, Vec<u16>) {
+fn sample_dynamic_image(img: &DynamicImage) -> (u32, u32, Vec<u16>, Vec<Rgb<u8>>) {
     let img = img.to_rgb8();
     let (width, height) = img.dimensions();
     let mut sample: Vec<u16> = vec![0; (height * width) as usize];
-    let mut colors: Vec<String> = vec![];
+    let mut palette: Vec<Rgb<u8>> = vec![];
     for (x, y, pixel) in img.enumerate_pixels() {
-        let pixel_string = rgb8_to_string(*pixel);
-        let k = match colors.iter().position(|c| c == &pixel_string) {
+        let k = match palette.iter().position(|c| c == pixel) {
             Some(i) => i,
             None => {
-                colors.push(pixel_string);
-                colors.len() - 1
+                palette.push(*pixel);
+                palette.len() - 1
             }
         };
         let index = x + y * width;
         sample[index as usize] = k as u16;
     }
-    (width, height, sample)
+    (width, height, sample, palette)
 }
 
 fn calculate_frequency_hints(sample_arr: &Vec<u16>) -> FrequencyHints {
@@ -291,10 +313,6 @@ fn get_sample(index: i32, sample_arr: &Vec<u16>) -> Option<u16> {
         return None;
     }
     return Some(sample_arr[index as usize]);
-}
-
-fn rgb8_to_string(pixel: Rgb<u8>) -> String {
-    format!("{},{},{}", pixel[0], pixel[1], pixel[2])
 }
 
 fn print_sampled_input(width: u32, height: u32, sample_arr: &Vec<u16>) {
