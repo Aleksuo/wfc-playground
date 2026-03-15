@@ -11,6 +11,7 @@ pub fn overlap_model(img: DynamicImage) -> (Vec<Rgb<u8>>, AdjadencyRules, Freque
     let (width, height, sample, palette) = sample_dynamic_image(&img);
     print_sampled_input(width, height, &sample);
     let (patterns, pattern_frequencies) = find_patterns(2, 2, width, height, &sample);
+    print_patterns(&patterns, &pattern_frequencies);
     let frequency_hints = calculate_frequency_hints(&sample);
     print_frequency_hints(&frequency_hints);
     let adjadency_rules = recognize_adjadency_rules(width, height, &sample);
@@ -122,6 +123,22 @@ fn get_sample(index: i32, sample_arr: &Vec<u16>) -> Option<u16> {
         return None;
     }
     return Some(sample_arr[index as usize]);
+}
+
+fn print_patterns(patterns: &HashSet<Pattern>, frequencies: &HashMap<Pattern, u16>) {
+    println!("Found {} unique patterns:", patterns.len());
+    for (i, pattern) in patterns.iter().enumerate() {
+        let freq = frequencies.get(pattern).unwrap_or(&0);
+        println!("  Pattern {} (freq: {}):", i, freq);
+        for y in 0..pattern.height {
+            print!("    ");
+            for x in 0..pattern.width {
+                let idx = (x + y * pattern.width) as usize;
+                print!("{:2} ", pattern.samples[idx]);
+            }
+            println!();
+        }
+    }
 }
 
 fn print_sampled_input(width: u32, height: u32, sample_arr: &Vec<u16>) {
