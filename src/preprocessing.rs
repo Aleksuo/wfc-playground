@@ -47,8 +47,8 @@ fn find_patterns(
 ) -> (HashSet<Pattern>, HashMap<Pattern, u16>) {
     let mut patterns: HashSet<Pattern> = HashSet::new();
     let mut pattern_frequencies: HashMap<Pattern, u16> = HashMap::new();
-    let max_width = input_width - pattern_width;
-    let max_height = input_height - pattern_height;
+    let max_width = input_width - pattern_width + 1;
+    let max_height = input_height - pattern_height + 1;
     for i in 0..max_height {
         for j in 0..max_width {
             let mut pattern_samples = Vec::new();
