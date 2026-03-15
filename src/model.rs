@@ -30,6 +30,13 @@ pub fn get_dir_vecs() -> HashMap<Direction, Vec2> {
     ])
 }
 
+#[derive(Hash, PartialEq, Eq, Clone)]
+pub struct Pattern {
+    pub samples: Vec<u16>,
+    pub width: u32,
+    pub height: u32,
+}
+
 #[derive(Clone)]
 pub struct Vec2 {
     pub x: i32,

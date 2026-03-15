@@ -5,11 +5,12 @@ use std::{
 
 use image::{DynamicImage, Rgb};
 
-use crate::model::{AdjadencyRules, FrequencyHints, Vec2, get_dir_vecs};
+use crate::model::{AdjadencyRules, FrequencyHints, Pattern, Vec2, get_dir_vecs};
 
 pub fn overlap_model(img: DynamicImage) -> (Vec<Rgb<u8>>, AdjadencyRules, FrequencyHints) {
     let (width, height, sample, palette) = sample_dynamic_image(&img);
     print_sampled_input(width, height, &sample);
+    let (patterns, pattern_frequencies) = find_patterns(2, 2, width, height, &sample);
     let frequency_hints = calculate_frequency_hints(&sample);
     print_frequency_hints(&frequency_hints);
     let adjadency_rules = recognize_adjadency_rules(width, height, &sample);
@@ -34,6 +35,43 @@ fn sample_dynamic_image(img: &DynamicImage) -> (u32, u32, Vec<u16>, Vec<Rgb<u8>>
         sample[index as usize] = k as u16;
     }
     (width, height, sample, palette)
+}
+
+fn find_patterns(
+    pattern_width: u32,
+    pattern_height: u32,
+    input_width: u32,
+    input_height: u32,
+    sampled_input: &Vec<u16>,
+) -> (HashSet<Pattern>, HashMap<Pattern, u16>) {
+    let mut patterns: HashSet<Pattern> = HashSet::new();
+    let mut pattern_frequencies: HashMap<Pattern, u16> = HashMap::new();
+    let max_width = input_width - pattern_width;
+    let max_height = input_height - pattern_height;
+    for i in 0..max_height {
+        for j in 0..max_width {
+            let mut pattern_samples = Vec::new();
+            for y in 0..pattern_height {
+                for x in 0..pattern_width {
+                    let sample_idx = (j + x) + ((i + y) * input_width);
+                    pattern_samples.push(sampled_input[sample_idx as usize]);
+                }
+            }
+            let new_pattern = Pattern {
+                samples: pattern_samples,
+                width: pattern_width,
+                height: pattern_height,
+            };
+            if patterns.contains(&new_pattern) {
+                let new_val = *pattern_frequencies.get(&new_pattern).unwrap() + 1;
+                pattern_frequencies.insert(new_pattern, new_val);
+            } else {
+                patterns.insert(new_pattern.clone());
+                pattern_frequencies.insert(new_pattern, 1);
+            }
+        }
+    }
+    (patterns, pattern_frequencies)
 }
 
 fn calculate_frequency_hints(sample_arr: &Vec<u16>) -> FrequencyHints {
