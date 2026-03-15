@@ -5,6 +5,7 @@ use std::{
 };
 
 use image::{DynamicImage, ImageBuffer, ImageReader, Rgb, RgbImage};
+use rand::{Rng, RngExt};
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 enum Direction {
@@ -64,15 +65,50 @@ impl WfcState {
 struct Cell {
     possible_values: HashSet<u16>,
     collapsed_val: Option<u16>,
-    entropy: u16,
+    entropy: Option<f32>,
     is_collapsed: bool,
 }
 
 impl Cell {
-    fn collapse(&mut self) {
-        let val = self.possible_values.iter().next().unwrap().clone();
-        self.possible_values = HashSet::from([val]);
-        self.collapsed_val = Some(val);
+    fn calculate_entropy(&mut self, frequency_hints: &FrequencyHints, rng: &mut impl Rng) {
+        let total_weight: f32 = {
+            let mut total = 0;
+            for (_, possible_sample_val) in self.possible_values.iter().enumerate() {
+                total += frequency_hints.get(possible_sample_val).unwrap();
+            }
+            total as f32
+        };
+        let log_weight = {
+            let mut total = 0.0;
+            for (_, possible_sample_val) in self.possible_values.iter().enumerate() {
+                let freq = *frequency_hints.get(possible_sample_val).unwrap() as f32;
+                total += freq * freq.log2();
+            }
+            total as f32
+        };
+        let tie_breaker_noise = rng.random_range(0.0..1e-6);
+        self.entropy =
+            Some((total_weight.log2() - (log_weight / total_weight)) + tie_breaker_noise);
+    }
+    fn collapse(&mut self, frequency_hints: &FrequencyHints, rng: &mut impl Rng) {
+        let total_weight: u32 = self
+            .possible_values
+            .iter()
+            .map(|v| frequency_hints.get(v).unwrap())
+            .sum();
+        let roll = rng.random_range(0..total_weight);
+        let mut sum = 0;
+        let mut chosen = *self.possible_values.iter().next().unwrap();
+        for val in self.possible_values.iter() {
+            let weight = *frequency_hints.get(val).unwrap();
+            sum += weight;
+            if sum > roll {
+                chosen = *val;
+                break;
+            }
+        }
+        self.possible_values = HashSet::from([chosen]);
+        self.collapsed_val = Some(chosen);
         self.is_collapsed = true;
     }
 }
@@ -90,8 +126,8 @@ impl ops::Add<Vec2> for Vec2 {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let input_img = ImageReader::open("./input/beach.bmp")?.decode()?;
     let (palette, adjadency_rules, frequency_hints) = overlap_model(input_img);
-    let output_width = 256;
-    let output_height = 256;
+    let output_width = 64;
+    let output_height = 64;
     let max_val = (palette.len() - 1) as u16;
     let output = wfc(
         output_width,
@@ -130,6 +166,7 @@ fn wfc(
     frequency_hints: &FrequencyHints,
     max_val: u16,
 ) -> Vec<u16> {
+    let mut rng = rand::rng();
     let mut state = WfcState {
         cells: Vec::new(),
         uncollapsed_num: output_width * output_height,
@@ -138,16 +175,21 @@ fn wfc(
     };
     let possible_values = HashSet::from_iter(0..=max_val);
     for _ in 0..(output_height * output_width) {
-        state.cells.push(Cell {
+        let mut new_cell = Cell {
             possible_values: possible_values.clone(),
-            entropy: possible_values.len() as u16,
+            entropy: None,
             is_collapsed: false,
             collapsed_val: None,
-        });
+        };
+        new_cell.calculate_entropy(frequency_hints, &mut rng);
+        state.cells.push(new_cell);
     }
 
     while state.uncollapsed_num > 0 {
-        println!("{}", state.uncollapsed_num);
+        if state.uncollapsed_num % 100 == 0 {
+            println!("Reimaining uncollapsed cells: {}", state.uncollapsed_num);
+        }
+
         // Find a cell to collapse
         let cell_to_collapse_idx = state
             .cells
@@ -157,7 +199,7 @@ fn wfc(
             .min_by(|(_, a), (_, b)| a.entropy.partial_cmp(&b.entropy).unwrap())
             .map(|(i, _)| i)
             .unwrap();
-        state.cells[cell_to_collapse_idx].collapse();
+        state.cells[cell_to_collapse_idx].collapse(&frequency_hints, &mut rng);
         state.uncollapsed_num -= 1;
         // Init propagation queue with the collapsed cell
         let mut propagation_queue: VecDeque<usize> = VecDeque::new();
@@ -198,12 +240,12 @@ fn wfc(
                     .collect();
 
                 let new_possible_val_len = neighbor_cell.possible_values.len();
-                neighbor_cell.entropy = new_possible_val_len as u16;
+                neighbor_cell.calculate_entropy(frequency_hints, &mut rng);
                 if new_possible_val_len == 0 {
                     // TODO: Implement handling for contradictions
                     panic!("Contradiction");
                 } else if new_possible_val_len == 1 && !neighbor_cell.is_collapsed {
-                    neighbor_cell.collapse();
+                    neighbor_cell.collapse(&frequency_hints, &mut rng);
                     state.uncollapsed_num -= 1;
                     if state.uncollapsed_num != 0 {
                         propagation_queue.push_back(neighbor_idx);
