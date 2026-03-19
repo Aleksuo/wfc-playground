@@ -99,8 +99,9 @@ fn find_patterns(
         .collect();
     let indexed_frequency_hints: FrequencyHints = {
         let mut idx_freq_hints = HashMap::new();
-        for (i, (_, freq)) in pattern_frequencies.iter().enumerate() {
-            idx_freq_hints.insert(i as u16, *freq);
+        for (i, pattern) in pattern_vec.iter().enumerate() {
+            let freq = *pattern_frequencies.get(pattern).unwrap();
+            idx_freq_hints.insert(i as u16, freq);
         }
         idx_freq_hints
     };
