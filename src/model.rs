@@ -1,7 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
     hash::Hash,
-    ops,
 };
 
 use rand::{Rng, RngExt};
@@ -83,18 +82,6 @@ impl Pattern {
     }
 }
 
-#[derive(Clone)]
-pub struct Vec2 {
-    pub x: i32,
-    pub y: i32,
-}
-
-impl Vec2 {
-    pub fn new(x: i32, y: i32) -> Self {
-        Self { x, y }
-    }
-}
-
 pub type AdjadencyRules = HashMap<(u16, Direction), HashSet<u16>>;
 pub type FrequencyHints = HashMap<u16, u32>;
 
@@ -162,15 +149,5 @@ impl Cell {
         self.possible_values = HashSet::from([chosen]);
         self.collapsed_val = Some(chosen);
         self.is_collapsed = true;
-    }
-}
-
-impl ops::Add<Vec2> for Vec2 {
-    type Output = Vec2;
-    fn add(self, rhs: Vec2) -> Self::Output {
-        Vec2 {
-            x: self.x + rhs.x,
-            y: self.y + rhs.y,
-        }
     }
 }

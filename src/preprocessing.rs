@@ -5,7 +5,7 @@ use std::{
 
 use image::{DynamicImage, Rgb};
 
-use crate::model::{ALL_DIRECTIONS, AdjadencyRules, FrequencyHints, Pattern, Vec2};
+use crate::model::{ALL_DIRECTIONS, AdjadencyRules, FrequencyHints, Pattern};
 
 pub struct PatternModel {
     pub palette: Vec<Rgb<u8>>,
@@ -128,17 +128,6 @@ fn recognize_adjadency_rules(patterns: &Vec<Pattern>) -> AdjadencyRules {
     adjadency_map
 }
 
-fn xy_index(coord: &Vec2, width: u32) -> i32 {
-    coord.x + coord.y * width as i32
-}
-
-fn get_sample(index: i32, sample_arr: &Vec<u16>) -> Option<u16> {
-    if index < 0 || index as usize > sample_arr.len() - 1 {
-        return None;
-    }
-    return Some(sample_arr[index as usize]);
-}
-
 fn print_patterns(patterns: &Vec<Pattern>, frequencies: &FrequencyHints) {
     println!("Found {} unique patterns:", patterns.len());
     for (i, pattern) in patterns.iter().enumerate() {
@@ -163,13 +152,6 @@ fn print_sampled_input(width: u32, height: u32, sample_arr: &Vec<u16>) {
             print!("{} ", sample_arr[index as usize]);
         }
         println!();
-    }
-}
-
-fn print_frequency_hints(frequency_hints: &FrequencyHints) {
-    println!("Printing frequencies:");
-    for freq in frequency_hints.iter().enumerate() {
-        println!("{:?}", freq.1);
     }
 }
 

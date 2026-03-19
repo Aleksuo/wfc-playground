@@ -9,7 +9,7 @@ mod preprocessing;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let input_img = ImageReader::open("./input/beach.bmp")?.decode()?;
-    let result = create_pattern_model(input_img, 4, 4);
+    let result = create_pattern_model(input_img, 2, 2);
     let grid_width = 64;
     let grid_height = 64;
     let max_val = (result.patterns.len() - 1) as u16;
