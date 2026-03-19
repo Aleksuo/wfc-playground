@@ -5,18 +5,37 @@ use std::{
 
 use image::{DynamicImage, Rgb};
 
-use crate::model::{AdjadencyRules, FrequencyHints, Pattern, Vec2, get_dir_vecs};
+use crate::model::{ALL_DIRECTIONS, AdjadencyRules, FrequencyHints, Pattern, Vec2};
 
-pub fn overlap_model(img: DynamicImage) -> (Vec<Rgb<u8>>, AdjadencyRules, FrequencyHints) {
+pub struct PatternModel {
+    pub palette: Vec<Rgb<u8>>,
+    pub patterns: Vec<Pattern>,
+    pub adjadency_rules: AdjadencyRules,
+    pub frequency_hints: FrequencyHints,
+    pub pattern_height: u32,
+    pub pattern_width: u32,
+}
+
+pub fn create_pattern_model(
+    img: DynamicImage,
+    pattern_width: u32,
+    pattern_height: u32,
+) -> PatternModel {
     let (width, height, sample, palette) = sample_dynamic_image(&img);
     print_sampled_input(width, height, &sample);
-    let (patterns, pattern_frequencies) = find_patterns(2, 2, width, height, &sample);
-    print_patterns(&patterns, &pattern_frequencies);
-    let frequency_hints = calculate_frequency_hints(&sample);
-    print_frequency_hints(&frequency_hints);
-    let adjadency_rules = recognize_adjadency_rules(width, height, &sample);
+    let (patterns, frequency_hints) =
+        find_patterns(pattern_width, pattern_height, width, height, &sample);
+    print_patterns(&patterns, &frequency_hints);
+    let adjadency_rules = recognize_adjadency_rules(&patterns);
     print_adjadency_rule(&adjadency_rules);
-    (palette, adjadency_rules, frequency_hints)
+    PatternModel {
+        palette,
+        patterns,
+        adjadency_rules,
+        frequency_hints,
+        pattern_height,
+        pattern_width,
+    }
 }
 
 fn sample_dynamic_image(img: &DynamicImage) -> (u32, u32, Vec<u16>, Vec<Rgb<u8>>) {
@@ -44,9 +63,9 @@ fn find_patterns(
     input_width: u32,
     input_height: u32,
     sampled_input: &Vec<u16>,
-) -> (Vec<Pattern>, HashMap<Pattern, u16>) {
+) -> (Vec<Pattern>, FrequencyHints) {
     let mut patterns: HashSet<Pattern> = HashSet::new();
-    let mut pattern_frequencies: HashMap<Pattern, u16> = HashMap::new();
+    let mut pattern_frequencies: HashMap<Pattern, u32> = HashMap::new();
     let max_width = input_width - pattern_width + 1;
     let max_height = input_height - pattern_height + 1;
     for i in 0..max_height {
@@ -78,40 +97,29 @@ fn find_patterns(
         .map(|(_, p)| p)
         .cloned()
         .collect();
-    (pattern_vec, pattern_frequencies)
-}
-
-fn calculate_frequency_hints(sample_arr: &Vec<u16>) -> FrequencyHints {
-    let mut frequency_hints: FrequencyHints = HashMap::new();
-    for val in sample_arr {
-        let maybe_cur_freq = frequency_hints.get(val);
-        if let Some(cur_freq) = maybe_cur_freq {
-            frequency_hints.insert(*val, *cur_freq + 1);
-        } else {
-            frequency_hints.insert(*val, 1);
+    let indexed_frequency_hints: FrequencyHints = {
+        let mut idx_freq_hints = HashMap::new();
+        for (i, (_, freq)) in pattern_frequencies.iter().enumerate() {
+            idx_freq_hints.insert(i as u16, *freq);
         }
-    }
-    frequency_hints
+        idx_freq_hints
+    };
+    (pattern_vec, indexed_frequency_hints)
 }
 
-fn recognize_adjadency_rules(width: u32, height: u32, samples: &Vec<u16>) -> AdjadencyRules {
-    let dir_vecs = get_dir_vecs();
+fn recognize_adjadency_rules(patterns: &Vec<Pattern>) -> AdjadencyRules {
     let mut adjadency_map: AdjadencyRules = HashMap::new();
-    for i in 0..height {
-        for j in 0..width {
-            let cur_pos = Vec2::new(j as i32, i as i32);
-            let cur_index = xy_index(&cur_pos, width);
-            let cur_sample = get_sample(cur_index, &samples).unwrap();
-            for (dir, dir_vec) in dir_vecs.iter() {
-                let dir_pos = cur_pos.clone() + dir_vec.clone();
-                let dir_index = xy_index(&dir_pos, width);
-                let dir_sample = get_sample(dir_index, &samples);
-                if let Some(s) = dir_sample {
-                    let adj = adjadency_map.get_mut(&(cur_sample, *dir));
-                    if let Some(rules) = adj {
-                        rules.insert(s);
+    for i in 0..patterns.len() {
+        let first_pattern = &patterns[i];
+        for j in 0..patterns.len() {
+            let second_pattern = &patterns[j];
+            for (_, dir) in ALL_DIRECTIONS.iter().enumerate() {
+                if first_pattern.compatible(&second_pattern, &dir) {
+                    let maybe_rules = adjadency_map.get_mut(&(i as u16, *dir));
+                    if let Some(rules) = maybe_rules {
+                        rules.insert(j as u16);
                     } else {
-                        adjadency_map.insert((cur_sample, *dir), HashSet::from([s]));
+                        adjadency_map.insert((i as u16, *dir), HashSet::from([j as u16]));
                     }
                 }
             }
@@ -131,10 +139,10 @@ fn get_sample(index: i32, sample_arr: &Vec<u16>) -> Option<u16> {
     return Some(sample_arr[index as usize]);
 }
 
-fn print_patterns(patterns: &Vec<Pattern>, frequencies: &HashMap<Pattern, u16>) {
+fn print_patterns(patterns: &Vec<Pattern>, frequencies: &FrequencyHints) {
     println!("Found {} unique patterns:", patterns.len());
     for (i, pattern) in patterns.iter().enumerate() {
-        let freq = frequencies.get(pattern).unwrap_or(&0);
+        let freq = frequencies.get(&(i as u16)).unwrap_or(&0);
         println!("  Pattern {} (freq: {}):", i, freq);
         for y in 0..pattern.height {
             print!("    ");
