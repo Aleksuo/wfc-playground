@@ -44,7 +44,7 @@ fn find_patterns(
     input_width: u32,
     input_height: u32,
     sampled_input: &Vec<u16>,
-) -> (HashSet<Pattern>, HashMap<Pattern, u16>) {
+) -> (Vec<Pattern>, HashMap<Pattern, u16>) {
     let mut patterns: HashSet<Pattern> = HashSet::new();
     let mut pattern_frequencies: HashMap<Pattern, u16> = HashMap::new();
     let max_width = input_width - pattern_width + 1;
@@ -72,7 +72,13 @@ fn find_patterns(
             }
         }
     }
-    (patterns, pattern_frequencies)
+    let pattern_vec: Vec<Pattern> = patterns
+        .iter()
+        .enumerate()
+        .map(|(_, p)| p)
+        .cloned()
+        .collect();
+    (pattern_vec, pattern_frequencies)
 }
 
 fn calculate_frequency_hints(sample_arr: &Vec<u16>) -> FrequencyHints {
@@ -125,7 +131,7 @@ fn get_sample(index: i32, sample_arr: &Vec<u16>) -> Option<u16> {
     return Some(sample_arr[index as usize]);
 }
 
-fn print_patterns(patterns: &HashSet<Pattern>, frequencies: &HashMap<Pattern, u16>) {
+fn print_patterns(patterns: &Vec<Pattern>, frequencies: &HashMap<Pattern, u16>) {
     println!("Found {} unique patterns:", patterns.len());
     for (i, pattern) in patterns.iter().enumerate() {
         let freq = frequencies.get(pattern).unwrap_or(&0);
