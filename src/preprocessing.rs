@@ -5,16 +5,11 @@ use std::{
 
 use image::{DynamicImage, Rgb};
 
-use crate::model::{ALL_DIRECTIONS, AdjadencyRules, FrequencyHints, Pattern};
-
-pub struct PatternModel {
-    pub palette: Vec<Rgb<u8>>,
-    pub patterns: Vec<Pattern>,
-    pub adjadency_rules: AdjadencyRules,
-    pub frequency_hints: FrequencyHints,
-    pub pattern_height: u32,
-    pub pattern_width: u32,
-}
+use crate::model::{
+    direction::ALL_DIRECTIONS,
+    pattern::Pattern,
+    pattern_model::{AdjadencyRules, FrequencyHints, PatternModel},
+};
 
 pub fn create_pattern_model(
     img: DynamicImage,

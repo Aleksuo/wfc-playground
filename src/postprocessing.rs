@@ -1,6 +1,6 @@
 use image::{ImageBuffer, Rgb, RgbImage};
 
-use crate::model::Pattern;
+use crate::model::pattern::Pattern;
 
 pub fn reconstruct_image(
     output: &Vec<u16>,

@@ -1,6 +1,11 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 
-use crate::model::{ALL_DIRECTIONS, Cell, Direction, FrequencyHints, WfcState};
+use crate::model::{
+    cell::Cell,
+    direction::{ALL_DIRECTIONS, Direction},
+    pattern_model::FrequencyHints,
+    wfc_state::WfcState,
+};
 
 pub fn wfc(
     output_width: u32,
