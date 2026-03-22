@@ -77,12 +77,19 @@ fn find_patterns(
                 width: pattern_width,
                 height: pattern_height,
             };
-            if patterns.contains(&new_pattern) {
-                let new_val = *pattern_frequencies.get(&new_pattern).unwrap() + 1;
-                pattern_frequencies.insert(new_pattern, new_val);
-            } else {
-                patterns.insert(new_pattern.clone());
-                pattern_frequencies.insert(new_pattern, 1);
+            let pat_rot_90 = new_pattern.rotate(90.0);
+            let pat_rot_180 = new_pattern.rotate(180.0);
+            let pat_rot_270 = new_pattern.rotate(270.0);
+
+            let new_patterns = vec![new_pattern, pat_rot_90, pat_rot_180, pat_rot_270];
+            for pat in new_patterns {
+                if patterns.contains(&pat) {
+                    let new_val = *pattern_frequencies.get(&pat).unwrap() + 1;
+                    pattern_frequencies.insert(pat, new_val);
+                } else {
+                    patterns.insert(pat.clone());
+                    pattern_frequencies.insert(pat, 1);
+                }
             }
         }
     }

@@ -95,6 +95,7 @@ pub fn wfc(
                 } else if new_possible_val_len == 1 && !neighbor_cell.is_collapsed {
                     neighbor_cell.collapse(&frequency_hints, &mut rng);
                     state.uncollapsed_num -= 1;
+                    println!("Remaining uncollapsed: {}", state.uncollapsed_num);
                     if state.uncollapsed_num != 0 {
                         propagation_queue.push_back(neighbor_idx);
                     }
