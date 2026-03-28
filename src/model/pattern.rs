@@ -61,6 +61,22 @@ impl Pattern {
         }
     }
 
+    pub fn rowwise_mirror(&self) -> Self {
+        let mut res_vec = Vec::with_capacity(self.samples.len());
+        for y in 0..self.height {
+            for x in (0..self.width).rev() {
+                let sample_idx = self.width * y + x;
+                let sample = self.samples[sample_idx as usize];
+                res_vec.push(sample);
+            }
+        }
+        Pattern {
+            width: self.width,
+            height: self.height,
+            samples: res_vec,
+        }
+    }
+
     pub fn rotate(&self, degrees: f32) -> Self {
         let mut rotated_samples = vec![0; self.samples.len()];
         let radians = degrees.to_radians();

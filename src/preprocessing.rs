@@ -77,11 +77,24 @@ fn find_patterns(
                 width: pattern_width,
                 height: pattern_height,
             };
+            let base_mirrored = new_pattern.rowwise_mirror();
             let pat_rot_90 = new_pattern.rotate(90.0);
+            let pat_rot_90_mirrored = pat_rot_90.rowwise_mirror();
             let pat_rot_180 = new_pattern.rotate(180.0);
+            let pat_rot_180_mirrored = pat_rot_180.rowwise_mirror();
             let pat_rot_270 = new_pattern.rotate(270.0);
+            let pat_rot_270_mirrored = pat_rot_270.rowwise_mirror();
 
-            let new_patterns = vec![new_pattern, pat_rot_90, pat_rot_180, pat_rot_270];
+            let new_patterns = vec![
+                new_pattern,
+                base_mirrored,
+                pat_rot_90,
+                pat_rot_90_mirrored,
+                pat_rot_180,
+                pat_rot_180_mirrored,
+                pat_rot_270,
+                pat_rot_270_mirrored,
+            ];
             for pat in new_patterns {
                 if patterns.contains(&pat) {
                     let new_val = *pattern_frequencies.get(&pat).unwrap() + 1;
