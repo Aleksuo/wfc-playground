@@ -8,3 +8,5 @@ on:
 jobs:
   check-format:
     uses: ./.github/workflows/check-format.yaml
+  run-tests:
+    uses: ./.github/workflows/run-tests.yaml

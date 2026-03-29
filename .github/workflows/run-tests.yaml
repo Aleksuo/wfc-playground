@@ -1,0 +1,19 @@
+name: Run tests
+
+on:
+  workflow_call:
+
+jobs:
+  check-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: cachix/install-nix-action@v31
+      - uses: cachix/cachix-action@v16
+        with:
+          name: devenv
+      - name: Install devenv
+        run: nix profile add nixpkgs#devenv
+
+      - name: Run all tests
+        run: devenv tasks run dev:test
