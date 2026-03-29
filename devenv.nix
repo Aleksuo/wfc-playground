@@ -6,4 +6,15 @@
 
   # https://devenv.sh/languages/
   languages.rust.enable = true;
+
+  # https://devenv.sh/tasks/
+  tasks."dev:fmt:check" = {
+    exec = "cargo fmt --check";
+    description = "Check Rust formatting";
+  };
+
+  tasks."dev:fmt:write" = {
+    exec = "cargo fmt";
+    description = "Format all Rust files"
+  }
 }
