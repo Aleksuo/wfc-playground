@@ -15,6 +15,6 @@
 
   tasks."dev:fmt:write" = {
     exec = "cargo fmt";
-    description = "Format all Rust files"
-  }
+    description = "Format all Rust files";
+  };
 }
