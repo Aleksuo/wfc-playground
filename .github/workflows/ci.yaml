@@ -10,3 +10,5 @@ jobs:
     uses: ./.github/workflows/check-format.yaml
   run-tests:
     uses: ./.github/workflows/run-tests.yaml
+  build-release:
+    uses: ./.github/workflows/build-release.yaml
