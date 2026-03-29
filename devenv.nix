@@ -25,4 +25,10 @@
     description = "Run all rust tests";
     showOutput = true;
   };
+
+  tasks."dev:build:release" = {
+    exec = "cargo build --release";
+    description = "Build the project in release mode";
+    showOutput = true;
+  };
 }
