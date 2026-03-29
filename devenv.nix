@@ -17,4 +17,9 @@
     exec = "cargo fmt";
     description = "Format all Rust files";
   };
+
+  tasks."dev:test" = {
+    exec = "cargo test";
+    description = "Run all rust tests";
+  };
 }
