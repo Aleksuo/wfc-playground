@@ -119,3 +119,51 @@ impl Pattern {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod rowwise_mirror {
+        use super::*;
+
+        #[test]
+        fn reverses_each_row() {
+            let test_pattern = Pattern {
+                samples: vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                height: 3,
+                width: 3,
+            };
+            let result = test_pattern.rowwise_mirror();
+
+            assert_eq!(result.height, test_pattern.height);
+            assert_eq!(result.width, test_pattern.width);
+            assert_eq!(result.samples, vec![3, 2, 1, 6, 5, 4, 9, 8, 7]);
+        }
+    }
+
+    mod rotate {
+        use super::*;
+
+        #[test]
+        fn can_rotate_in_90_deg_increments() {
+            let test_pattern = Pattern {
+                samples: vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                height: 3,
+                width: 3,
+            };
+
+            let result_90 = test_pattern.rotate(90.0);
+            assert_eq!(result_90.samples, vec![7, 4, 1, 8, 5, 2, 9, 6, 3]);
+
+            let result_180 = test_pattern.rotate(180.0);
+            assert_eq!(result_180.samples, vec![9, 8, 7, 6, 5, 4, 3, 2, 1]);
+
+            let result_270 = test_pattern.rotate(270.0);
+            assert_eq!(result_270.samples, vec![3, 6, 9, 2, 5, 8, 1, 4, 7]);
+
+            let result_360 = test_pattern.rotate(360.0);
+            assert_eq!(result_360.samples, test_pattern.samples);
+        }
+    }
+}
