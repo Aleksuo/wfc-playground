@@ -21,5 +21,6 @@
   tasks."dev:test" = {
     exec = "cargo test";
     description = "Run all rust tests";
+    showOutput = true;
   };
 }
