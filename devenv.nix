@@ -11,11 +11,13 @@
   tasks."dev:fmt:check" = {
     exec = "cargo fmt --check";
     description = "Check Rust formatting";
+    showOutput = true;
   };
 
   tasks."dev:fmt:write" = {
     exec = "cargo fmt";
     description = "Format all Rust files";
+    showOutput = true;
   };
 
   tasks."dev:test" = {
