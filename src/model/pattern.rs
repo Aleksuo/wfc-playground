@@ -154,7 +154,7 @@ mod tests {
             };
 
             let result_90 = test_pattern.rotate(90.0);
-            assert_eq!(result_90.samples, vec![7, 4, 1, 8, 5, 2, 9, 6, 0]);
+            assert_eq!(result_90.samples, vec![7, 4, 1, 8, 5, 2, 9, 6, 3]);
 
             let result_180 = test_pattern.rotate(180.0);
             assert_eq!(result_180.samples, vec![9, 8, 7, 6, 5, 4, 3, 2, 1]);
