@@ -3,11 +3,11 @@ use image::{ImageBuffer, Rgb, RgbImage};
 use crate::model::pattern::Pattern;
 
 pub fn reconstruct_image(
-    output: &Vec<u16>,
+    output: &[u16],
     grid_width: u32,
     grid_height: u32,
-    patterns: &Vec<Pattern>,
-    palette: &Vec<Rgb<u8>>,
+    patterns: &[Pattern],
+    palette: &[Rgb<u8>],
     pattern_width: u32,
     pattern_height: u32,
 ) -> RgbImage {

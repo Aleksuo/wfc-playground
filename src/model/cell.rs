@@ -15,18 +15,18 @@ impl Cell {
     pub fn calculate_entropy(&mut self, frequency_hints: &FrequencyHints, rng: &mut impl Rng) {
         let total_weight: f32 = {
             let mut total = 0;
-            for (_, possible_sample_val) in self.possible_values.iter().enumerate() {
+            for possible_sample_val in self.possible_values.iter() {
                 total += frequency_hints.get(possible_sample_val).unwrap();
             }
             total as f32
         };
         let log_weight = {
             let mut total = 0.0;
-            for (_, possible_sample_val) in self.possible_values.iter().enumerate() {
+            for possible_sample_val in self.possible_values.iter() {
                 let freq = *frequency_hints.get(possible_sample_val).unwrap() as f32;
                 total += freq * freq.log2();
             }
-            total as f32
+            total
         };
         let tie_breaker_noise = rng.random_range(0.0..1e-6);
         self.entropy =
