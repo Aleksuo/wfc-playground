@@ -12,3 +12,5 @@ jobs:
     uses: ./.github/workflows/run-tests.yaml
   build-release:
     uses: ./.github/workflows/build-release.yaml
+  lint:
+    uses: ./.github/workflows/lint.yaml
