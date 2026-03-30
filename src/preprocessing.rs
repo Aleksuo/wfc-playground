@@ -57,7 +57,7 @@ fn find_patterns(
     pattern_height: u32,
     input_width: u32,
     input_height: u32,
-    sampled_input: &Vec<u16>,
+    sampled_input: &[u16],
 ) -> (Vec<Pattern>, FrequencyHints) {
     let mut patterns: HashSet<Pattern> = HashSet::new();
     let mut pattern_frequencies: HashMap<Pattern, u32> = HashMap::new();
@@ -106,12 +106,7 @@ fn find_patterns(
             }
         }
     }
-    let pattern_vec: Vec<Pattern> = patterns
-        .iter()
-        .enumerate()
-        .map(|(_, p)| p)
-        .cloned()
-        .collect();
+    let pattern_vec: Vec<Pattern> = patterns.iter().cloned().collect();
     let indexed_frequency_hints: FrequencyHints = {
         let mut idx_freq_hints = HashMap::new();
         for (i, pattern) in pattern_vec.iter().enumerate() {
@@ -123,14 +118,13 @@ fn find_patterns(
     (pattern_vec, indexed_frequency_hints)
 }
 
-fn recognize_adjadency_rules(patterns: &Vec<Pattern>) -> AdjadencyRules {
+fn recognize_adjadency_rules(patterns: &[Pattern]) -> AdjadencyRules {
     let mut adjadency_map: AdjadencyRules = HashMap::new();
     for i in 0..patterns.len() {
         let first_pattern = &patterns[i];
-        for j in 0..patterns.len() {
-            let second_pattern = &patterns[j];
-            for (_, dir) in ALL_DIRECTIONS.iter().enumerate() {
-                if first_pattern.compatible(&second_pattern, &dir) {
+        for (j, second_pattern) in patterns.iter().enumerate() {
+            for dir in ALL_DIRECTIONS.iter() {
+                if first_pattern.compatible(second_pattern, dir) {
                     let maybe_rules = adjadency_map.get_mut(&(i as u16, *dir));
                     if let Some(rules) = maybe_rules {
                         rules.insert(j as u16);
@@ -144,7 +138,7 @@ fn recognize_adjadency_rules(patterns: &Vec<Pattern>) -> AdjadencyRules {
     adjadency_map
 }
 
-fn print_patterns(patterns: &Vec<Pattern>, frequencies: &FrequencyHints) {
+fn print_patterns(patterns: &[Pattern], frequencies: &FrequencyHints) {
     println!("Found {} unique patterns:", patterns.len());
     for (i, pattern) in patterns.iter().enumerate() {
         let freq = frequencies.get(&(i as u16)).unwrap_or(&0);
@@ -160,7 +154,7 @@ fn print_patterns(patterns: &Vec<Pattern>, frequencies: &FrequencyHints) {
     }
 }
 
-fn print_sampled_input(width: u32, height: u32, sample_arr: &Vec<u16>) {
+fn print_sampled_input(width: u32, height: u32, sample_arr: &[u16]) {
     println!("Sampled input:");
     for i in 0..height {
         for j in 0..width {

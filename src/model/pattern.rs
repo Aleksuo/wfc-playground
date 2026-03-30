@@ -20,7 +20,7 @@ impl Pattern {
                         }
                     }
                 }
-                return true;
+                true
             }
             Direction::Down => {
                 for row in 1..self.height {
@@ -32,7 +32,7 @@ impl Pattern {
                         }
                     }
                 }
-                return true;
+                true
             }
             Direction::Right => {
                 for row in 0..self.height {
@@ -44,7 +44,7 @@ impl Pattern {
                         }
                     }
                 }
-                return true;
+                true
             }
             Direction::Left => {
                 for row in 0..self.height {
@@ -56,7 +56,7 @@ impl Pattern {
                         }
                     }
                 }
-                return true;
+                true
             }
         }
     }

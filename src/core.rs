@@ -19,7 +19,6 @@ pub fn wfc(
         cells: Vec::new(),
         uncollapsed_num: output_width * output_height,
         adjadency_rules: adj_rules.clone(),
-        frequency_hints: frequency_hints.clone(),
     };
     let possible_values = HashSet::from_iter(0..=max_val);
     for _ in 0..(output_height * output_width) {
@@ -34,7 +33,7 @@ pub fn wfc(
     }
 
     while state.uncollapsed_num > 0 {
-        if state.uncollapsed_num % 100 == 0 {
+        if state.uncollapsed_num.is_multiple_of(100) {
             println!("Reimaining uncollapsed cells: {}", state.uncollapsed_num);
         }
 
@@ -47,7 +46,7 @@ pub fn wfc(
             .min_by(|(_, a), (_, b)| a.entropy.partial_cmp(&b.entropy).unwrap())
             .map(|(i, _)| i)
             .unwrap();
-        state.cells[cell_to_collapse_idx].collapse(&frequency_hints, &mut rng);
+        state.cells[cell_to_collapse_idx].collapse(frequency_hints, &mut rng);
         state.uncollapsed_num -= 1;
         // Init propagation queue with the collapsed cell
         let mut propagation_queue: VecDeque<usize> = VecDeque::new();
@@ -62,7 +61,7 @@ pub fn wfc(
                 (Direction::Down, HashSet::new()),
             ]);
             // Construct union map of all possible values in each direction for the cell
-            for (_, possible) in next_cell.possible_values.iter().enumerate() {
+            for possible in next_cell.possible_values.iter() {
                 for direction in ALL_DIRECTIONS {
                     let dir_set = union_map.get_mut(&direction).unwrap();
                     if let Some(possible_adj) = state.adjadency_rules.get(&(*possible, direction)) {
@@ -93,7 +92,7 @@ pub fn wfc(
                     // TODO: Implement handling for contradictions
                     panic!("Contradiction");
                 } else if new_possible_val_len == 1 && !neighbor_cell.is_collapsed {
-                    neighbor_cell.collapse(&frequency_hints, &mut rng);
+                    neighbor_cell.collapse(frequency_hints, &mut rng);
                     state.uncollapsed_num -= 1;
                     println!("Remaining uncollapsed: {}", state.uncollapsed_num);
                     if state.uncollapsed_num != 0 {
