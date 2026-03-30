@@ -9,7 +9,7 @@
 
   # https://devenv.sh/tasks/
   tasks."dev:fmt:check" = {
-    exec = "cargo fmt --check --color=always";
+    exec = "cargo fmt --check";
     description = "Check Rust formatting";
     showOutput = true;
   };
