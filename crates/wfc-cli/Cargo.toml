@@ -1,0 +1,8 @@
+[package]
+name = "wfc-cli"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+wfc = { path = "../wfc"}
+image = { workspace = true}

@@ -1,11 +1,6 @@
 use image::ImageReader;
 
-use crate::{postprocessing::reconstruct_image, preprocessing::create_pattern_model};
-
-mod core;
-mod model;
-mod postprocessing;
-mod preprocessing;
+use wfc::{core::wfc, postprocessing::reconstruct_image, preprocessing::create_pattern_model};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let input_img = ImageReader::open("./input/beach.bmp")?.decode()?;
@@ -13,7 +8,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let grid_width = 32;
     let grid_height = 32;
     let max_val = (result.patterns.len() - 1) as u16;
-    let output = crate::core::wfc(
+    let output = wfc(
         grid_width,
         grid_height,
         &result.adjadency_rules,
