@@ -1,8 +1,7 @@
-[package]
-name = "wfc-playground"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+resolver = "3"
+members = ["crates/wfc", "crates/wfc-cli"]
 
-[dependencies]
+[workspace.dependencies]
 image = "0.25.9"
 rand = "0.10.0"
