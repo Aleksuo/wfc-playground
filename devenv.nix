@@ -46,4 +46,10 @@
     description = "Profile wfc-cli with samply";
     showOutput = true;
   };
+
+  tasks."bench:wfc" = {
+    exec = "cargo bench -p wfc";
+    description = "Run benchmarks for wfc crate";
+    showOutput = true;
+  };
 }
