@@ -2,7 +2,10 @@
 
 {
   # https://devenv.sh/packages/
-  packages = [ pkgs.git ];
+  packages = [
+    pkgs.git
+    pkgs.samply
+  ];
 
   # https://devenv.sh/languages/
   languages.rust.enable = true;
@@ -35,6 +38,12 @@
   tasks."dev:lint" = {
     exec = "cargo clippy --color=always -- -D warnings";
     description = "Run clippy lints";
+    showOutput = true;
+  };
+
+  tasks."dev:profile" = {
+    exec = "cargo build --profile profiling --color=always && samply record ./target/release/wfc-cli";
+    description = "Profile wfc-cli with samply";
     showOutput = true;
   };
 }
