@@ -11,37 +11,37 @@
   languages.rust.enable = true;
 
   # https://devenv.sh/tasks/
-  tasks."dev:fmt:check" = {
+  tasks."fmt:check" = {
     exec = "cargo fmt --check";
     description = "Check Rust formatting";
     showOutput = true;
   };
 
-  tasks."dev:fmt:write" = {
+  tasks."fmt:write" = {
     exec = "cargo fmt";
     description = "Format all Rust files";
     showOutput = true;
   };
 
-  tasks."dev:test" = {
+  tasks."test" = {
     exec = "cargo test --color=always";
     description = "Run all rust tests";
     showOutput = true;
   };
 
-  tasks."dev:build:release" = {
+  tasks."build:release" = {
     exec = "cargo build --release --color=always";
     description = "Build the project in release mode";
     showOutput = true;
   };
 
-  tasks."dev:lint" = {
+  tasks."lint" = {
     exec = "cargo clippy --color=always -- -D warnings";
     description = "Run clippy lints";
     showOutput = true;
   };
 
-  tasks."dev:profile" = {
+  tasks."profile" = {
     exec = "cargo build --profile profiling --color=always && samply record ./target/release/wfc-cli";
     description = "Profile wfc-cli with samply";
     showOutput = true;
