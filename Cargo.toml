@@ -5,3 +5,7 @@ members = ["crates/wfc", "crates/wfc-cli"]
 [workspace.dependencies]
 image = "0.25.9"
 rand = "0.10.0"
+
+[profile.profiling]
+inherits = "release"
+debug = true

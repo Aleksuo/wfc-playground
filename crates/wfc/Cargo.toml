@@ -6,3 +6,10 @@ edition = "2024"
 [dependencies]
 image = { workspace = true }
 rand = { workspace = true }
+
+[dev-dependencies]
+criterion = { version = "0.8", features = ["html_reports"] }
+
+[[bench]]
+name = "wfc_bench"
+harness = false
