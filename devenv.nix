@@ -42,13 +42,13 @@
   };
 
   tasks."lint:wfc" = {
-    exec = "cargo clippy --color=always -- -D warnings -p wfc";
+    exec = "cargo clippy -p wfc --color=always -- -D warnings";
     description = "Run clippy lints for wfc";
     showOutput = true;
   };
 
   tasks."lint:wfc-cli" = {
-    exec = "cargo clippy --color=always -- -D warnings -p wfc-cli";
+    exec = "cargo clippy -p wfc-cli --color=always -- -D warnings";
     description = "Run clippy lints for wfc-cli";
     showOutput = true;
   };
