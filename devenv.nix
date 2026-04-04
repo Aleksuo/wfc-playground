@@ -54,7 +54,7 @@
   };
 
   tasks."profile:wfc-cli" = {
-    exec = "cargo build --profile -p wfc-cli profiling --color=always && samply record ./target/release/wfc-cli";
+    exec = "cargo build --profile profiling -p wfc-cli --color=always && samply record ./target/release/wfc-cli";
     description = "Profile wfc-cli with samply";
     showOutput = true;
   };

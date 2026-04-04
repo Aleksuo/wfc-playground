@@ -11,5 +11,5 @@ rand = { workspace = true }
 criterion = { version = "0.8", features = ["html_reports"] }
 
 [[bench]]
-name = "my_benchmark"
+name = "wfc_bench"
 harness = false
