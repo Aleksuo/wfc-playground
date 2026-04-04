@@ -23,9 +23,15 @@
     showOutput = true;
   };
 
-  tasks."test" = {
-    exec = "cargo test --color=always";
-    description = "Run all rust tests";
+  tasks."test:wfc" = {
+    exec = "cargo test -p wfc --color=always";
+    description = "Run tests for wfc";
+    showOutput = true;
+  };
+
+  tasks."test:wfc-cli" = {
+    exec = "cargo test -p wfc-cli --color=always";
+    description = "Run tests for wfc-cli";
     showOutput = true;
   };
 
@@ -35,14 +41,20 @@
     showOutput = true;
   };
 
-  tasks."lint" = {
-    exec = "cargo clippy --color=always -- -D warnings";
-    description = "Run clippy lints";
+  tasks."lint:wfc" = {
+    exec = "cargo clippy --color=always -- -D warnings -p wfc";
+    description = "Run clippy lints for wfc";
     showOutput = true;
   };
 
-  tasks."profile" = {
-    exec = "cargo build --profile profiling --color=always && samply record ./target/release/wfc-cli";
+  tasks."lint:wfc-cli" = {
+    exec = "cargo clippy --color=always -- -D warnings -p wfc-cli";
+    description = "Run clippy lints for wfc-cli";
+    showOutput = true;
+  };
+
+  tasks."profile:wfc-cli" = {
+    exec = "cargo build --profile -p wfc-cli profiling --color=always && samply record ./target/release/wfc-cli";
     description = "Profile wfc-cli with samply";
     showOutput = true;
   };
