@@ -67,34 +67,38 @@ pub fn wfc(
             }
             // Iterate neigbors and intersect with the union set
             for (dir, neighbor_idx) in get_neighbor_indices(next_prop, output_width, output_height)
+                .iter()
+                .enumerate()
             {
-                let neighbor_cell = &mut state.cells[neighbor_idx];
-                if neighbor_cell.is_collapsed {
-                    continue;
-                }
-                let dir_union = &union_map[dir as usize];
-                let possible_val_len = neighbor_cell.possible_values.len();
-                // println!("Union {:?} {:?}", &dir, &union_map.get(&dir));
-                // println!("Neighbor possible: {:?}", &neighbor_cell.possible_values);
-                neighbor_cell.possible_values = neighbor_cell
-                    .possible_values
-                    .intersection(dir_union)
-                    .cloned()
-                    .collect();
-
-                let new_possible_val_len = neighbor_cell.possible_values.len();
-                neighbor_cell.calculate_entropy(frequency_hints, &mut rng);
-                if new_possible_val_len == 0 {
-                    // TODO: Implement handling for contradictions
-                    panic!("Contradiction");
-                } else if new_possible_val_len == 1 && !neighbor_cell.is_collapsed {
-                    neighbor_cell.collapse(frequency_hints, &mut rng);
-                    state.uncollapsed_num -= 1;
-                    if state.uncollapsed_num != 0 {
-                        propagation_queue.push_back(neighbor_idx);
+                if let Some(n_idx) = neighbor_idx {
+                    let neighbor_cell = &mut state.cells[*n_idx];
+                    if neighbor_cell.is_collapsed {
+                        continue;
                     }
-                } else if possible_val_len > neighbor_cell.possible_values.len() {
-                    propagation_queue.push_back(neighbor_idx);
+                    let dir_union = &union_map[dir];
+                    let possible_val_len = neighbor_cell.possible_values.len();
+                    // println!("Union {:?} {:?}", &dir, &union_map.get(&dir));
+                    // println!("Neighbor possible: {:?}", &neighbor_cell.possible_values);
+                    neighbor_cell.possible_values = neighbor_cell
+                        .possible_values
+                        .intersection(dir_union)
+                        .cloned()
+                        .collect();
+
+                    let new_possible_val_len = neighbor_cell.possible_values.len();
+                    neighbor_cell.calculate_entropy(frequency_hints, &mut rng);
+                    if new_possible_val_len == 0 {
+                        // TODO: Implement handling for contradictions
+                        panic!("Contradiction");
+                    } else if new_possible_val_len == 1 && !neighbor_cell.is_collapsed {
+                        neighbor_cell.collapse(frequency_hints, &mut rng);
+                        state.uncollapsed_num -= 1;
+                        if state.uncollapsed_num != 0 {
+                            propagation_queue.push_back(*n_idx);
+                        }
+                    } else if possible_val_len > neighbor_cell.possible_values.len() {
+                        propagation_queue.push_back(*n_idx);
+                    }
                 }
             }
         }
@@ -102,21 +106,22 @@ pub fn wfc(
     state.get_sampled_output()
 }
 
-fn get_neighbor_indices(index: usize, width: u32, height: u32) -> Vec<(Direction, usize)> {
+#[inline(always)]
+fn get_neighbor_indices(index: usize, width: u32, height: u32) -> [Option<usize>; 4] {
     let x = (index as u32) % width;
     let y = (index as u32) / width;
-    let mut neighbors = Vec::new();
+    let mut neighbors: [Option<usize>; 4] = [None; 4];
     if x > 0 {
-        neighbors.push((Direction::Left, index - 1));
+        neighbors[Direction::Left as usize] = Some(index - 1);
     }
     if x + 1 < width {
-        neighbors.push((Direction::Right, index + 1));
+        neighbors[Direction::Right as usize] = Some(index + 1);
     }
     if y > 0 {
-        neighbors.push((Direction::Up, index - width as usize));
+        neighbors[Direction::Up as usize] = Some(index - width as usize);
     }
     if y + 1 < height {
-        neighbors.push((Direction::Down, index + width as usize));
+        neighbors[Direction::Down as usize] = Some(index + width as usize);
     }
     neighbors
 }
