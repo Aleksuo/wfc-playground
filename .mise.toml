@@ -1,0 +1,56 @@
+[tools]
+rust = { version = "1.94.1", profile = "default"}
+
+"cargo:samply" = "0.13.1"
+
+[tasks."fmt:check"]
+run = "cargo fmt --check"
+description = "Check Rust formatting"
+
+[tasks."fmt:write"]
+run = "cargo fmt"
+description = "Format all Rust files"
+
+[tasks."test:wfc"]
+run = "cargo test -p wfc --color=always"
+description = "Run tests for wfc"
+
+[tasks."test:wfc-cli"]
+run = "cargo test -p wfc-cli --color=always"
+description = "Run tests for wfc-cli"
+
+[tasks.test]
+run = "cargo test --workspace --color=always"
+description = "Run tests for all projects"
+
+[tasks.build]
+run = "cargo build --release --color=always"
+description = "Build all projects in release mode"
+
+[tasks."build:wfc"]
+run = "cargo build --release -p wfc --color=always"
+description = "Build wfc in release mode"
+
+[tasks."build:wfc-cli"]
+run = "cargo build --release -p wfc-cli --color=always"
+description = "Build wfc-cli in release mode"
+
+[tasks.lint]
+run = "cargo clippy --workspace --color=always -- -D warnings"
+description = "Run clippy lints for all projects"
+
+[tasks."lint:wfc"]
+run = "cargo clippy -p wfc --color=always -- -D warnings"
+description = "Run clippy lints for wfc"
+
+[tasks."lint:wfc-cli"]
+run = "cargo clippy -p wfc-cli --color=always -- -D warnings"
+description = "Run clippy lints for wfc-cli"
+
+[tasks."profile:wfc-cli"]
+run = "cargo build --profile profiling -p wfc-cli --color=always && samply record ./target/release/wfc-cli"
+description = "Profile wfc-cli with samply"
+
+[tasks."bench:wfc"]
+run = "cargo bench -p wfc"
+description = "Run benchmarks for wfc crate"
