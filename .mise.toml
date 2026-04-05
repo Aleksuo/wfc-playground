@@ -1,7 +1,7 @@
 [tools]
-rust = { version = "latest", profile = "default"}
+rust = { version = "1.94.1", profile = "default"}
 
-"cargo:samply" = "latest"
+"cargo:samply" = "0.13.1"
 
 [tasks."fmt:check"]
 run = "cargo fmt --check"
