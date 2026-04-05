@@ -50,16 +50,16 @@ pub fn wfc(
         // While propagation queue is not empty propagate
         while let Some(next_prop) = propagation_queue.pop_front() {
             let next_cell = &state.cells[next_prop];
-            let mut union_map: HashMap<Direction, HashSet<u16>> = HashMap::from([
-                (Direction::Up, HashSet::new()),
-                (Direction::Right, HashSet::new()),
-                (Direction::Left, HashSet::new()),
-                (Direction::Down, HashSet::new()),
-            ]);
+            let mut union_map: [HashSet<u16>; 4] = [
+                HashSet::new(),
+                HashSet::new(),
+                HashSet::new(),
+                HashSet::new(),
+            ];
             // Construct union map of all possible values in each direction for the cell
             for possible in next_cell.possible_values.iter() {
                 for direction in ALL_DIRECTIONS {
-                    let dir_set = union_map.get_mut(&direction).unwrap();
+                    let dir_set = &mut union_map[direction as usize];
                     if let Some(possible_adj) = state.adjadency_rules.get(&(*possible, direction)) {
                         dir_set.extend(possible_adj);
                     }
@@ -72,7 +72,7 @@ pub fn wfc(
                 if neighbor_cell.is_collapsed {
                     continue;
                 }
-                let dir_union = union_map.get(&dir).unwrap();
+                let dir_union = &union_map[dir as usize];
                 let possible_val_len = neighbor_cell.possible_values.len();
                 // println!("Union {:?} {:?}", &dir, &union_map.get(&dir));
                 // println!("Neighbor possible: {:?}", &neighbor_cell.possible_values);
