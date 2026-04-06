@@ -1,11 +1,9 @@
-use std::collections::HashSet;
-
 use rand::{Rng, RngExt};
 
-use crate::model::pattern_model::FrequencyHints;
+use crate::model::{pattern_model::FrequencyHints, simple_bit_set::SimpleBitSet};
 
 pub struct Cell {
-    pub possible_values: HashSet<u16>,
+    pub possible_values: SimpleBitSet,
     pub collapsed_val: Option<u16>,
     pub entropy: Option<f32>,
     pub is_collapsed: bool,
@@ -15,15 +13,15 @@ impl Cell {
     pub fn calculate_entropy(&mut self, frequency_hints: &FrequencyHints, rng: &mut impl Rng) {
         let total_weight: f32 = {
             let mut total = 0;
-            for possible_sample_val in self.possible_values.iter() {
-                total += frequency_hints.get(possible_sample_val).unwrap();
+            for possible_sample_val in self.possible_values.into_iter() {
+                total += frequency_hints.get(&(possible_sample_val as u16)).unwrap();
             }
             total as f32
         };
         let log_weight = {
             let mut total = 0.0;
-            for possible_sample_val in self.possible_values.iter() {
-                let freq = *frequency_hints.get(possible_sample_val).unwrap() as f32;
+            for possible_sample_val in self.possible_values.into_iter() {
+                let freq = *frequency_hints.get(&(possible_sample_val as u16)).unwrap() as f32;
                 total += freq * freq.log2();
             }
             total
@@ -35,22 +33,24 @@ impl Cell {
     pub fn collapse(&mut self, frequency_hints: &FrequencyHints, rng: &mut impl Rng) {
         let total_weight: u32 = self
             .possible_values
-            .iter()
-            .map(|v| frequency_hints.get(v).unwrap())
+            .into_iter()
+            .map(|v| frequency_hints.get(&(v as u16)).unwrap())
             .sum();
         let roll = rng.random_range(0..total_weight);
         let mut sum = 0;
-        let mut chosen = *self.possible_values.iter().next().unwrap();
-        for val in self.possible_values.iter() {
-            let weight = *frequency_hints.get(val).unwrap();
+        let mut chosen = self.possible_values.into_iter().next().unwrap();
+        for val in self.possible_values.into_iter() {
+            let weight = *frequency_hints.get(&(val as u16)).unwrap();
             sum += weight;
             if sum > roll {
-                chosen = *val;
+                chosen = val;
                 break;
             }
         }
-        self.possible_values = HashSet::from([chosen]);
-        self.collapsed_val = Some(chosen);
+        let max_value = frequency_hints.len();
+        self.possible_values = SimpleBitSet::new(max_value);
+        self.possible_values.set(chosen);
+        self.collapsed_val = Some(chosen as u16);
         self.is_collapsed = true;
     }
 }

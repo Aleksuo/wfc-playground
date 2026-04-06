@@ -1,18 +1,19 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 
 use crate::model::{
     cell::Cell,
     direction::{ALL_DIRECTIONS, Direction},
     pattern_model::FrequencyHints,
+    simple_bit_set::SimpleBitSet,
     wfc_state::WfcState,
 };
 
 pub fn wfc(
     output_width: u32,
     output_height: u32,
-    adj_rules: &HashMap<(u16, Direction), HashSet<u16>>,
+    adj_rules: &HashMap<(u16, Direction), SimpleBitSet>,
     frequency_hints: &FrequencyHints,
-    max_val: u16,
+    num_patterns: usize,
 ) -> Vec<u16> {
     let mut rng = rand::rng();
     let mut state = WfcState {
@@ -20,7 +21,7 @@ pub fn wfc(
         uncollapsed_num: output_width * output_height,
         adjadency_rules: adj_rules.clone(),
     };
-    let possible_values = HashSet::from_iter(0..=max_val);
+    let possible_values = SimpleBitSet::full(num_patterns);
     for _ in 0..(output_height * output_width) {
         let mut new_cell = Cell {
             possible_values: possible_values.clone(),
@@ -50,18 +51,20 @@ pub fn wfc(
         // While propagation queue is not empty propagate
         while let Some(next_prop) = propagation_queue.pop_front() {
             let next_cell = &state.cells[next_prop];
-            let mut union_map: [HashSet<u16>; 4] = [
-                HashSet::new(),
-                HashSet::new(),
-                HashSet::new(),
-                HashSet::new(),
+            let mut union_map: [SimpleBitSet; 4] = [
+                SimpleBitSet::new(num_patterns),
+                SimpleBitSet::new(num_patterns),
+                SimpleBitSet::new(num_patterns),
+                SimpleBitSet::new(num_patterns),
             ];
             // Construct union map of all possible values in each direction for the cell
-            for possible in next_cell.possible_values.iter() {
+            for possible in next_cell.possible_values.into_iter() {
                 for direction in ALL_DIRECTIONS {
                     let dir_set = &mut union_map[direction as usize];
-                    if let Some(possible_adj) = state.adjadency_rules.get(&(*possible, direction)) {
-                        dir_set.extend(possible_adj);
+                    if let Some(possible_adj) =
+                        state.adjadency_rules.get(&(possible as u16, direction))
+                    {
+                        dir_set.union_with(possible_adj);
                     }
                 }
             }
@@ -76,16 +79,12 @@ pub fn wfc(
                         continue;
                     }
                     let dir_union = &union_map[dir];
-                    let possible_val_len = neighbor_cell.possible_values.len();
+                    let possible_val_len = neighbor_cell.possible_values.count();
                     // println!("Union {:?} {:?}", &dir, &union_map.get(&dir));
                     // println!("Neighbor possible: {:?}", &neighbor_cell.possible_values);
-                    neighbor_cell.possible_values = neighbor_cell
-                        .possible_values
-                        .intersection(dir_union)
-                        .cloned()
-                        .collect();
+                    neighbor_cell.possible_values.intersect_with(dir_union);
 
-                    let new_possible_val_len = neighbor_cell.possible_values.len();
+                    let new_possible_val_len = neighbor_cell.possible_values.count();
                     neighbor_cell.calculate_entropy(frequency_hints, &mut rng);
                     if new_possible_val_len == 0 {
                         // TODO: Implement handling for contradictions
@@ -96,7 +95,7 @@ pub fn wfc(
                         if state.uncollapsed_num != 0 {
                             propagation_queue.push_back(*n_idx);
                         }
-                    } else if possible_val_len > neighbor_cell.possible_values.len() {
+                    } else if possible_val_len > neighbor_cell.possible_values.count() {
                         propagation_queue.push_back(*n_idx);
                     }
                 }

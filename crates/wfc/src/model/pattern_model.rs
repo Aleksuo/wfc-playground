@@ -1,10 +1,10 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use image::Rgb;
 
-use crate::model::{direction::Direction, pattern::Pattern};
+use crate::model::{direction::Direction, pattern::Pattern, simple_bit_set::SimpleBitSet};
 
-pub type AdjadencyRules = HashMap<(u16, Direction), HashSet<u16>>;
+pub type AdjadencyRules = HashMap<(u16, Direction), SimpleBitSet>;
 pub type FrequencyHints = HashMap<u16, u32>;
 pub struct PatternModel {
     pub palette: Vec<Rgb<u8>>,

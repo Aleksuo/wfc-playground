@@ -9,6 +9,7 @@ use crate::model::{
     direction::ALL_DIRECTIONS,
     pattern::Pattern,
     pattern_model::{AdjadencyRules, FrequencyHints, PatternModel},
+    simple_bit_set::SimpleBitSet,
 };
 
 pub fn create_pattern_model(
@@ -127,9 +128,11 @@ fn recognize_adjadency_rules(patterns: &[Pattern]) -> AdjadencyRules {
                 if first_pattern.compatible(second_pattern, dir) {
                     let maybe_rules = adjadency_map.get_mut(&(i as u16, *dir));
                     if let Some(rules) = maybe_rules {
-                        rules.insert(j as u16);
+                        rules.set(j);
                     } else {
-                        adjadency_map.insert((i as u16, *dir), HashSet::from([j as u16]));
+                        let mut bit_set = SimpleBitSet::new(patterns.len());
+                        bit_set.set(j);
+                        adjadency_map.insert((i as u16, *dir), bit_set);
                     }
                 }
             }
