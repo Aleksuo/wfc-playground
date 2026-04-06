@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    vec,
-};
+use std::collections::{HashMap, HashSet};
 
 use image::{DynamicImage, Rgb};
 
@@ -116,25 +113,20 @@ fn find_patterns(
 }
 
 fn recognize_adjadency_rules(patterns: &[Pattern]) -> AdjadencyRules {
-    let mut adjadency_map: AdjadencyRules = HashMap::new();
-    for i in 0..patterns.len() {
+    let num_patterns = patterns.len();
+    let num_directions = ALL_DIRECTIONS.len();
+    let mut rules = vec![SimpleBitSet::new(num_patterns); num_patterns * num_directions];
+    for i in 0..num_patterns {
         let first_pattern = &patterns[i];
         for (j, second_pattern) in patterns.iter().enumerate() {
             for dir in ALL_DIRECTIONS.iter() {
                 if first_pattern.compatible(second_pattern, dir) {
-                    let maybe_rules = adjadency_map.get_mut(&(i as u16, *dir));
-                    if let Some(rules) = maybe_rules {
-                        rules.set(j);
-                    } else {
-                        let mut bit_set = SimpleBitSet::new(patterns.len());
-                        bit_set.set(j);
-                        adjadency_map.insert((i as u16, *dir), bit_set);
-                    }
+                    rules[i * num_directions + *dir as usize].set(j);
                 }
             }
         }
     }
-    adjadency_map
+    rules
 }
 
 fn print_patterns(patterns: &[Pattern], frequencies: &FrequencyHints) {
@@ -166,7 +158,7 @@ fn print_sampled_input(width: u32, height: u32, sample_arr: &[u16]) {
 
 fn print_adjadency_rule(adj_rules: &AdjadencyRules) {
     println!("Printing found rules:");
-    for rule in adj_rules.iter().enumerate() {
-        println!("{:?}", rule.1);
+    for (i, rule) in adj_rules.iter().enumerate() {
+        println!("{}: {:?}", i, rule);
     }
 }

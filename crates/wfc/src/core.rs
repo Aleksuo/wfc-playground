@@ -1,9 +1,9 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 
 use crate::model::{
     cell::Cell,
     direction::{ALL_DIRECTIONS, Direction},
-    pattern_model::FrequencyHints,
+    pattern_model::{AdjadencyRules, FrequencyHints},
     simple_bit_set::SimpleBitSet,
     wfc_state::WfcState,
 };
@@ -11,7 +11,7 @@ use crate::model::{
 pub fn wfc(
     output_width: u32,
     output_height: u32,
-    adj_rules: &HashMap<(u16, Direction), SimpleBitSet>,
+    adj_rules: &AdjadencyRules,
     frequency_hints: &FrequencyHints,
     num_patterns: usize,
 ) -> Vec<u16> {
@@ -58,14 +58,12 @@ pub fn wfc(
                 SimpleBitSet::new(num_patterns),
             ];
             // Construct union map of all possible values in each direction for the cell
+            let num_directions = ALL_DIRECTIONS.len();
             for possible in next_cell.possible_values.into_iter() {
                 for direction in ALL_DIRECTIONS {
                     let dir_set = &mut union_map[direction as usize];
-                    if let Some(possible_adj) =
-                        state.adjadency_rules.get(&(possible as u16, direction))
-                    {
-                        dir_set.union_with(possible_adj);
-                    }
+                    let rule_idx = possible * num_directions + direction as usize;
+                    dir_set.union_with(&state.adjadency_rules[rule_idx]);
                 }
             }
             // Iterate neigbors and intersect with the union set

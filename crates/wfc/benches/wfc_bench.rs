@@ -1,24 +1,17 @@
-use std::collections::HashMap;
-
 use criterion::{Criterion, criterion_group, criterion_main};
 use wfc::core::wfc;
-use wfc::model::direction::Direction;
+use wfc::model::direction::ALL_DIRECTIONS;
 use wfc::model::simple_bit_set::SimpleBitSet;
 
-fn checkerboard_rules() -> HashMap<(u16, Direction), SimpleBitSet> {
-    let mut rules = HashMap::new();
-    for dir in [
-        Direction::Up,
-        Direction::Down,
-        Direction::Left,
-        Direction::Right,
-    ] {
-        let mut simple_bit_set_1 = SimpleBitSet::new(2);
-        simple_bit_set_1.set(0);
-        let mut simple_bit_set_2 = SimpleBitSet::new(2);
-        simple_bit_set_2.set(1);
-        rules.insert((0, dir), simple_bit_set_2);
-        rules.insert((1, dir), simple_bit_set_1);
+fn checkerboard_rules() -> Vec<SimpleBitSet> {
+    let num_patterns = 2;
+    let num_directions = ALL_DIRECTIONS.len();
+    let mut rules = vec![SimpleBitSet::new(num_patterns); num_patterns * num_directions];
+    for dir in ALL_DIRECTIONS {
+        // Pattern 0 can be next to pattern 1 in all directions
+        rules[0 * num_directions + dir as usize].set(1);
+        // Pattern 1 can be next to pattern 0 in all directions
+        rules[1 * num_directions + dir as usize].set(0);
     }
     rules
 }
