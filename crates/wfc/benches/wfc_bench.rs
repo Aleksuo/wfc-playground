@@ -1,10 +1,11 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use wfc::core::wfc;
 use wfc::model::direction::Direction;
+use wfc::model::simple_bit_set::SimpleBitSet;
 
-fn checkerboard_rules() -> HashMap<(u16, Direction), HashSet<u16>> {
+fn checkerboard_rules() -> HashMap<(u16, Direction), SimpleBitSet> {
     let mut rules = HashMap::new();
     for dir in [
         Direction::Up,
@@ -12,8 +13,12 @@ fn checkerboard_rules() -> HashMap<(u16, Direction), HashSet<u16>> {
         Direction::Left,
         Direction::Right,
     ] {
-        rules.insert((0, dir), HashSet::from([1]));
-        rules.insert((1, dir), HashSet::from([0]));
+        let mut simple_bit_set_1 = SimpleBitSet::new(2);
+        simple_bit_set_1.set(0);
+        let mut simple_bit_set_2 = SimpleBitSet::new(2);
+        simple_bit_set_2.set(1);
+        rules.insert((0, dir), simple_bit_set_2);
+        rules.insert((1, dir), simple_bit_set_1);
     }
     rules
 }
@@ -26,7 +31,7 @@ fn bench_wfc_8x8(c: &mut Criterion) {
     let rules = checkerboard_rules();
     let freqs = checkerboard_frequencies();
     c.bench_function("wfc 8x8 checkerboard", |b| {
-        b.iter(|| wfc(8, 8, &rules, &freqs, 1));
+        b.iter(|| wfc(8, 8, &rules, &freqs, 2));
     });
 }
 
@@ -34,7 +39,7 @@ fn bench_wfc_16x16(c: &mut Criterion) {
     let rules = checkerboard_rules();
     let freqs = checkerboard_frequencies();
     c.bench_function("wfc 16x16 checkerboard", |b| {
-        b.iter(|| wfc(16, 16, &rules, &freqs, 1));
+        b.iter(|| wfc(16, 16, &rules, &freqs, 2));
     });
 }
 
@@ -42,7 +47,7 @@ fn bench_wfc_32x32(c: &mut Criterion) {
     let rules = checkerboard_rules();
     let freqs = checkerboard_frequencies();
     c.bench_function("wfc 32x32 checkerboard", |b| {
-        b.iter(|| wfc(32, 32, &rules, &freqs, 1));
+        b.iter(|| wfc(32, 32, &rules, &freqs, 2));
     });
 }
 
