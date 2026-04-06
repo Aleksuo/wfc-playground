@@ -108,15 +108,11 @@ fn find_patterns(
         }
     }
     let pattern_vec: Vec<Pattern> = patterns.iter().cloned().collect();
-    let indexed_frequency_hints: FrequencyHints = {
-        let mut idx_freq_hints = HashMap::new();
-        for (i, pattern) in pattern_vec.iter().enumerate() {
-            let freq = *pattern_frequencies.get(pattern).unwrap();
-            idx_freq_hints.insert(i as u16, freq);
-        }
-        idx_freq_hints
-    };
-    (pattern_vec, indexed_frequency_hints)
+    let frequency_vec: FrequencyHints = pattern_vec
+        .iter()
+        .map(|p| *pattern_frequencies.get(p).unwrap())
+        .collect();
+    (pattern_vec, frequency_vec)
 }
 
 fn recognize_adjadency_rules(patterns: &[Pattern]) -> AdjadencyRules {
@@ -144,7 +140,7 @@ fn recognize_adjadency_rules(patterns: &[Pattern]) -> AdjadencyRules {
 fn print_patterns(patterns: &[Pattern], frequencies: &FrequencyHints) {
     println!("Found {} unique patterns:", patterns.len());
     for (i, pattern) in patterns.iter().enumerate() {
-        let freq = frequencies.get(&(i as u16)).unwrap_or(&0);
+        let freq = frequencies.get(i).unwrap_or(&0);
         println!("  Pattern {} (freq: {}):", i, freq);
         for y in 0..pattern.height {
             print!("    ");

@@ -23,8 +23,8 @@ fn checkerboard_rules() -> HashMap<(u16, Direction), SimpleBitSet> {
     rules
 }
 
-fn checkerboard_frequencies() -> HashMap<u16, u32> {
-    HashMap::from([(0, 1), (1, 1)])
+fn checkerboard_frequencies() -> Vec<u32> {
+    vec![1, 1]
 }
 
 fn bench_wfc_8x8(c: &mut Criterion) {

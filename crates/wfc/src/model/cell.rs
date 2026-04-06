@@ -14,14 +14,14 @@ impl Cell {
         let total_weight: f32 = {
             let mut total = 0;
             for possible_sample_val in self.possible_values.into_iter() {
-                total += frequency_hints.get(&(possible_sample_val as u16)).unwrap();
+                total += frequency_hints[possible_sample_val];
             }
             total as f32
         };
         let log_weight = {
             let mut total = 0.0;
             for possible_sample_val in self.possible_values.into_iter() {
-                let freq = *frequency_hints.get(&(possible_sample_val as u16)).unwrap() as f32;
+                let freq = frequency_hints[possible_sample_val] as f32;
                 total += freq * freq.log2();
             }
             total
@@ -34,13 +34,13 @@ impl Cell {
         let total_weight: u32 = self
             .possible_values
             .into_iter()
-            .map(|v| frequency_hints.get(&(v as u16)).unwrap())
+            .map(|v| frequency_hints[v])
             .sum();
         let roll = rng.random_range(0..total_weight);
         let mut sum = 0;
         let mut chosen = self.possible_values.into_iter().next().unwrap();
         for val in self.possible_values.into_iter() {
-            let weight = *frequency_hints.get(&(val as u16)).unwrap();
+            let weight = frequency_hints[val];
             sum += weight;
             if sum > roll {
                 chosen = val;
