@@ -1,5 +1,5 @@
 [tools]
-rust = { version = "1.94.1", profile = "default"}
+rust = { version = "1.94.1", profile = "default", components = ["rustfmt", "clippy"]}
 
 "cargo:samply" = "0.13.1"
 
