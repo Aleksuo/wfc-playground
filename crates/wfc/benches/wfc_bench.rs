@@ -1,32 +1,30 @@
-use std::collections::{HashMap, HashSet};
-
 use criterion::{Criterion, criterion_group, criterion_main};
 use wfc::core::wfc;
-use wfc::model::direction::Direction;
+use wfc::model::direction::ALL_DIRECTIONS;
+use wfc::model::simple_bit_set::SimpleBitSet;
 
-fn checkerboard_rules() -> HashMap<(u16, Direction), HashSet<u16>> {
-    let mut rules = HashMap::new();
-    for dir in [
-        Direction::Up,
-        Direction::Down,
-        Direction::Left,
-        Direction::Right,
-    ] {
-        rules.insert((0, dir), HashSet::from([1]));
-        rules.insert((1, dir), HashSet::from([0]));
+fn checkerboard_rules() -> Vec<SimpleBitSet> {
+    let num_patterns = 2;
+    let num_directions = ALL_DIRECTIONS.len();
+    let mut rules = vec![SimpleBitSet::new(num_patterns); num_patterns * num_directions];
+    for dir in ALL_DIRECTIONS {
+        // Pattern 0 can be next to pattern 1 in all directions
+        rules[0 * num_directions + dir as usize].set(1);
+        // Pattern 1 can be next to pattern 0 in all directions
+        rules[1 * num_directions + dir as usize].set(0);
     }
     rules
 }
 
-fn checkerboard_frequencies() -> HashMap<u16, u32> {
-    HashMap::from([(0, 1), (1, 1)])
+fn checkerboard_frequencies() -> Vec<u32> {
+    vec![1, 1]
 }
 
 fn bench_wfc_8x8(c: &mut Criterion) {
     let rules = checkerboard_rules();
     let freqs = checkerboard_frequencies();
     c.bench_function("wfc 8x8 checkerboard", |b| {
-        b.iter(|| wfc(8, 8, &rules, &freqs, 1));
+        b.iter(|| wfc(8, 8, &rules, &freqs, 2));
     });
 }
 
@@ -34,7 +32,7 @@ fn bench_wfc_16x16(c: &mut Criterion) {
     let rules = checkerboard_rules();
     let freqs = checkerboard_frequencies();
     c.bench_function("wfc 16x16 checkerboard", |b| {
-        b.iter(|| wfc(16, 16, &rules, &freqs, 1));
+        b.iter(|| wfc(16, 16, &rules, &freqs, 2));
     });
 }
 
@@ -42,7 +40,7 @@ fn bench_wfc_32x32(c: &mut Criterion) {
     let rules = checkerboard_rules();
     let freqs = checkerboard_frequencies();
     c.bench_function("wfc 32x32 checkerboard", |b| {
-        b.iter(|| wfc(32, 32, &rules, &freqs, 1));
+        b.iter(|| wfc(32, 32, &rules, &freqs, 2));
     });
 }
 

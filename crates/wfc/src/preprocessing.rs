@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    vec,
-};
+use std::collections::{HashMap, HashSet};
 
 use image::{DynamicImage, Rgb};
 
@@ -9,6 +6,7 @@ use crate::model::{
     direction::ALL_DIRECTIONS,
     pattern::Pattern,
     pattern_model::{AdjadencyRules, FrequencyHints, PatternModel},
+    simple_bit_set::SimpleBitSet,
 };
 
 pub fn create_pattern_model(
@@ -107,41 +105,34 @@ fn find_patterns(
         }
     }
     let pattern_vec: Vec<Pattern> = patterns.iter().cloned().collect();
-    let indexed_frequency_hints: FrequencyHints = {
-        let mut idx_freq_hints = HashMap::new();
-        for (i, pattern) in pattern_vec.iter().enumerate() {
-            let freq = *pattern_frequencies.get(pattern).unwrap();
-            idx_freq_hints.insert(i as u16, freq);
-        }
-        idx_freq_hints
-    };
-    (pattern_vec, indexed_frequency_hints)
+    let frequency_vec: FrequencyHints = pattern_vec
+        .iter()
+        .map(|p| *pattern_frequencies.get(p).unwrap())
+        .collect();
+    (pattern_vec, frequency_vec)
 }
 
 fn recognize_adjadency_rules(patterns: &[Pattern]) -> AdjadencyRules {
-    let mut adjadency_map: AdjadencyRules = HashMap::new();
-    for i in 0..patterns.len() {
+    let num_patterns = patterns.len();
+    let num_directions = ALL_DIRECTIONS.len();
+    let mut rules = vec![SimpleBitSet::new(num_patterns); num_patterns * num_directions];
+    for i in 0..num_patterns {
         let first_pattern = &patterns[i];
         for (j, second_pattern) in patterns.iter().enumerate() {
             for dir in ALL_DIRECTIONS.iter() {
                 if first_pattern.compatible(second_pattern, dir) {
-                    let maybe_rules = adjadency_map.get_mut(&(i as u16, *dir));
-                    if let Some(rules) = maybe_rules {
-                        rules.insert(j as u16);
-                    } else {
-                        adjadency_map.insert((i as u16, *dir), HashSet::from([j as u16]));
-                    }
+                    rules[i * num_directions + *dir as usize].set(j);
                 }
             }
         }
     }
-    adjadency_map
+    rules
 }
 
 fn print_patterns(patterns: &[Pattern], frequencies: &FrequencyHints) {
     println!("Found {} unique patterns:", patterns.len());
     for (i, pattern) in patterns.iter().enumerate() {
-        let freq = frequencies.get(&(i as u16)).unwrap_or(&0);
+        let freq = frequencies.get(i).unwrap_or(&0);
         println!("  Pattern {} (freq: {}):", i, freq);
         for y in 0..pattern.height {
             print!("    ");
@@ -167,7 +158,7 @@ fn print_sampled_input(width: u32, height: u32, sample_arr: &[u16]) {
 
 fn print_adjadency_rule(adj_rules: &AdjadencyRules) {
     println!("Printing found rules:");
-    for rule in adj_rules.iter().enumerate() {
-        println!("{:?}", rule.1);
+    for (i, rule) in adj_rules.iter().enumerate() {
+        println!("{}: {:?}", i, rule);
     }
 }

@@ -5,15 +5,14 @@ use wfc::{core::wfc, postprocessing::reconstruct_image, preprocessing::create_pa
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let input_img = ImageReader::open("./input/beach.bmp")?.decode()?;
     let result = create_pattern_model(input_img, 4, 4);
-    let grid_width = 32;
-    let grid_height = 32;
-    let max_val = (result.patterns.len() - 1) as u16;
+    let grid_width = 64;
+    let grid_height = 64;
     let output = wfc(
         grid_width,
         grid_height,
         &result.adjadency_rules,
         &result.frequency_hints,
-        max_val,
+        result.patterns.len(),
     );
     let img = reconstruct_image(
         &output,

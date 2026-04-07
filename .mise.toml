@@ -1,5 +1,5 @@
 [tools]
-rust = { version = "1.94.1", profile = "default"}
+rust = { version = "1.94.1", profile = "default", components = ["rustfmt", "clippy"]}
 
 "cargo:samply" = "0.13.1"
 
@@ -54,3 +54,11 @@ description = "Profile wfc-cli with samply"
 [tasks."bench:wfc"]
 run = "cargo bench -p wfc"
 description = "Run benchmarks for wfc crate"
+
+[tasks."bench:wfc:baseline"]
+run = "cargo bench -p wfc --bench wfc_bench -- --save-baseline baseline"
+description = "Save current benchmarks as the baseline"
+
+[tasks."bench:wfc:compare"]
+run = "cargo bench -p wfc --bench wfc_bench -- --baseline baseline"
+description = "Run benchmarks and compare against the saved baseline"
