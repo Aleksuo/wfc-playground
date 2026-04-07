@@ -6,11 +6,9 @@ pub struct SimpleBitSet {
 impl SimpleBitSet {
     pub fn new(num_bits: usize) -> Self {
         let words_num = SimpleBitSet::calculate_words_from_bits(num_bits);
-        let mut word_vec = Vec::with_capacity(words_num);
-        for _ in 0..words_num {
-            word_vec.push(0u64);
+        SimpleBitSet {
+            words: vec![0u64; words_num],
         }
-        SimpleBitSet { words: word_vec }
     }
 
     pub fn full(num_bits: usize) -> Self {
