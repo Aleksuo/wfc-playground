@@ -1,3 +1,5 @@
+min_version = "2026.4.3"
+
 [tools]
 rust = { version = "1.94.1", profile = "default", components = ["rustfmt", "clippy"]}
 
