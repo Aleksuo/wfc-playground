@@ -17,7 +17,7 @@ runs:
     - name: Install mise
       shell: bash
       run: |
-        MISE_INSTALL_HELP=0 ./install-mise.sh
+        MISE_INSTALL_HELP=0 ./.mise/vendor/install.sh
         echo "$HOME/.local/bin" >> "$GITHUB_PATH"
     - name: Install tools
       shell: bash
