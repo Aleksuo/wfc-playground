@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap};
 
 use image::{DynamicImage, Rgb};
 
@@ -57,7 +57,8 @@ fn find_patterns(
     input_height: u32,
     sampled_input: &[u16],
 ) -> (Vec<Pattern>, FrequencyHints) {
-    let mut patterns: HashSet<Pattern> = HashSet::new();
+    // BTreeSet will maintain the order of inserted elements, making the vec conversion deterministic.
+    let mut patterns: BTreeSet<Pattern> = BTreeSet::new();
     let mut pattern_frequencies: HashMap<Pattern, u32> = HashMap::new();
     let max_width = input_width - pattern_width + 1;
     let max_height = input_height - pattern_height + 1;
