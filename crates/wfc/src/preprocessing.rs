@@ -57,7 +57,7 @@ fn find_patterns(
     input_height: u32,
     sampled_input: &[u16],
 ) -> (Vec<Pattern>, FrequencyHints) {
-    // BTreeSet will maintain the order of inserted elements, making the vec conversion deterministic.
+    // BTreeSet return the patterns Ord sorted, making the vec conversion deterministic.
     let mut patterns: BTreeSet<Pattern> = BTreeSet::new();
     let mut pattern_frequencies: HashMap<Pattern, u32> = HashMap::new();
     let max_width = input_width - pattern_width + 1;
