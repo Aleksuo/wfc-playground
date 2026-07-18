@@ -1,3 +1,4 @@
+use rand::prelude::*;
 use std::collections::VecDeque;
 
 use crate::model::{
@@ -14,8 +15,9 @@ pub fn wfc(
     adj_rules: &AdjadencyRules,
     frequency_hints: &FrequencyHints,
     num_patterns: usize,
+    seed: u64,
 ) -> Vec<u16> {
-    let mut rng = rand::rng();
+    let mut rng = SmallRng::seed_from_u64(seed);
     let mut state = WfcState {
         cells: Vec::new(),
         uncollapsed_num: output_width * output_height,

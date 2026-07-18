@@ -13,6 +13,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         &result.adjadency_rules,
         &result.frequency_hints,
         result.patterns.len(),
+        10,
     );
     let img = reconstruct_image(
         &output,
