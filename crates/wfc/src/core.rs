@@ -1,4 +1,4 @@
-use rand::prelude::*;
+use rand::{prelude::*, rngs::Xoshiro256PlusPlus};
 use std::collections::VecDeque;
 
 use crate::model::{
@@ -17,7 +17,7 @@ pub fn wfc(
     num_patterns: usize,
     seed: u64,
 ) -> Vec<u16> {
-    let mut rng = SmallRng::seed_from_u64(seed);
+    let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
     let mut state = WfcState {
         cells: Vec::new(),
         uncollapsed_num: output_width * output_height,
