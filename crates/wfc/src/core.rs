@@ -124,3 +124,97 @@ fn get_neighbor_indices(index: usize, width: u32, height: u32) -> [Option<usize>
     }
     neighbors
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod wfc {
+        use super::*;
+
+        fn checkerboard_rules() -> Vec<SimpleBitSet> {
+            let num_patterns = 4;
+            let num_directions = ALL_DIRECTIONS.len();
+            let mut rules = vec![SimpleBitSet::new(num_patterns); num_patterns * num_directions];
+
+            for dir in ALL_DIRECTIONS {
+                for pattern in 0..2 {
+                    rules[pattern * num_directions + dir as usize].set(2);
+                    rules[pattern * num_directions + dir as usize].set(3);
+                }
+                for pattern in 2..4 {
+                    rules[pattern * num_directions + dir as usize].set(0);
+                    rules[pattern * num_directions + dir as usize].set(1);
+                }
+            }
+            rules
+        }
+
+        fn checkerboard_frequencies() -> Vec<u32> {
+            vec![1, 1, 1, 1]
+        }
+
+        #[test]
+        fn output_is_deterministic_with_same_seed() {
+            let test_ruleset = checkerboard_rules();
+            let test_freqs = checkerboard_frequencies();
+            let seed: u64 = 27;
+            let width = 16;
+            let height = 16;
+
+            let num_checks = 5;
+            let first_run = wfc(
+                width,
+                height,
+                &test_ruleset,
+                &test_freqs,
+                test_freqs.len(),
+                seed,
+            );
+
+            for _ in 0..num_checks {
+                assert_eq!(
+                    first_run,
+                    wfc(
+                        width,
+                        height,
+                        &test_ruleset,
+                        &test_freqs,
+                        test_freqs.len(),
+                        seed,
+                    )
+                )
+            }
+        }
+
+        #[test]
+        fn different_seed_changes_output() {
+            let test_ruleset = checkerboard_rules();
+            let test_freqs = checkerboard_frequencies();
+            let seed_1: u64 = 27;
+            let seed_2: u64 = 10;
+            let width = 16;
+            let height = 16;
+
+            let first_run = wfc(
+                width,
+                height,
+                &test_ruleset,
+                &test_freqs,
+                test_freqs.len(),
+                seed_1,
+            );
+
+            let second_run = wfc(
+                width,
+                height,
+                &test_ruleset,
+                &test_freqs,
+                test_freqs.len(),
+                seed_2,
+            );
+
+            assert_ne!(first_run, second_run);
+        }
+    }
+}
