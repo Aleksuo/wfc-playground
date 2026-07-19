@@ -17,3 +17,7 @@ harness = false
 [[bench]]
 name = "wfc_beach_bench"
 harness = false
+
+[[bench]]
+name = "wfc_creatures_bench"
+harness = false
