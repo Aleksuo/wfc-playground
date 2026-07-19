@@ -15,12 +15,12 @@ pub fn create_pattern_model(
     pattern_height: u32,
 ) -> PatternModel {
     let (width, height, sample, palette) = sample_dynamic_image(&img);
-    print_sampled_input(width, height, &sample);
+    // print_sampled_input(width, height, &sample);
     let (patterns, frequency_hints) =
         find_patterns(pattern_width, pattern_height, width, height, &sample);
-    print_patterns(&patterns, &frequency_hints);
+    // print_patterns(&patterns, &frequency_hints);
     let adjadency_rules = recognize_adjadency_rules(&patterns);
-    print_adjadency_rule(&adjadency_rules);
+    // print_adjadency_rule(&adjadency_rules);
     PatternModel {
         palette,
         patterns,
