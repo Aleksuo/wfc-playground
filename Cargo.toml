@@ -6,6 +6,10 @@ members = ["crates/wfc", "crates/wfc-cli"]
 image = "0.25.9"
 rand = "0.10.0"
 
+[profile.release]
+lto = "thin"
+codegen-units = 1
+
 [profile.profiling]
 inherits = "release"
 debug = true
