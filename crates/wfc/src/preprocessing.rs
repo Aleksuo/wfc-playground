@@ -130,6 +130,7 @@ fn recognize_adjadency_rules(patterns: &[Pattern]) -> AdjadencyRules {
     rules
 }
 
+#[allow(dead_code)]
 fn print_patterns(patterns: &[Pattern], frequencies: &FrequencyHints) {
     println!("Found {} unique patterns:", patterns.len());
     for (i, pattern) in patterns.iter().enumerate() {
@@ -146,6 +147,7 @@ fn print_patterns(patterns: &[Pattern], frequencies: &FrequencyHints) {
     }
 }
 
+#[allow(dead_code)]
 fn print_sampled_input(width: u32, height: u32, sample_arr: &[u16]) {
     println!("Sampled input:");
     for i in 0..height {
@@ -157,6 +159,7 @@ fn print_sampled_input(width: u32, height: u32, sample_arr: &[u16]) {
     }
 }
 
+#[allow(dead_code)]
 fn print_adjadency_rule(adj_rules: &AdjadencyRules) {
     println!("Printing found rules:");
     for (i, rule) in adj_rules.iter().enumerate() {
