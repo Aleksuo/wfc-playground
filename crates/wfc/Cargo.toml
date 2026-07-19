@@ -11,5 +11,13 @@ rand = { workspace = true }
 criterion = { version = "0.8", features = ["html_reports"] }
 
 [[bench]]
-name = "wfc_bench"
+name = "wfc_simple_bench"
+harness = false
+
+[[bench]]
+name = "wfc_beach_bench"
+harness = false
+
+[[bench]]
+name = "wfc_creatures_bench"
 harness = false
