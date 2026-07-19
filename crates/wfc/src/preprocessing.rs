@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap};
 
 use image::{DynamicImage, Rgb};
 
@@ -57,7 +57,8 @@ fn find_patterns(
     input_height: u32,
     sampled_input: &[u16],
 ) -> (Vec<Pattern>, FrequencyHints) {
-    let mut patterns: HashSet<Pattern> = HashSet::new();
+    // BTreeSet return the patterns Ord sorted, making the vec conversion deterministic.
+    let mut patterns: BTreeSet<Pattern> = BTreeSet::new();
     let mut pattern_frequencies: HashMap<Pattern, u32> = HashMap::new();
     let max_width = input_width - pattern_width + 1;
     let max_height = input_height - pattern_height + 1;
@@ -160,5 +161,25 @@ fn print_adjadency_rule(adj_rules: &AdjadencyRules) {
     println!("Printing found rules:");
     for (i, rule) in adj_rules.iter().enumerate() {
         println!("{}: {:?}", i, rule);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pattern_order_is_deterministic() {
+        let sampled_input = vec![0, 1, 2, 2, 0, 1, 1, 2, 0];
+        let (test_patterns, test_frequencies) = find_patterns(2, 2, 3, 3, &sampled_input);
+
+        assert!(test_patterns.len() > 1);
+
+        for _ in 0..5 {
+            let (patterns, frequencies) = find_patterns(2, 2, 3, 3, &sampled_input);
+
+            assert!(test_patterns == patterns);
+            assert_eq!(test_frequencies, frequencies);
+        }
     }
 }

@@ -1,6 +1,6 @@
 use crate::model::direction::Direction;
 
-#[derive(Hash, PartialEq, Eq, Clone)]
+#[derive(Hash, PartialEq, Eq, Clone, PartialOrd, Ord)]
 pub struct Pattern {
     pub samples: Vec<u16>,
     pub width: u32,
