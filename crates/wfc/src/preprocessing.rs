@@ -163,3 +163,23 @@ fn print_adjadency_rule(adj_rules: &AdjadencyRules) {
         println!("{}: {:?}", i, rule);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pattern_order_is_deterministic() {
+        let sampled_input = vec![0, 1, 2, 2, 0, 1, 1, 2, 0];
+        let (test_patterns, test_frequencies) = find_patterns(2, 2, 3, 3, &sampled_input);
+
+        assert!(test_patterns.len() > 1);
+
+        for _ in 0..5 {
+            let (patterns, frequencies) = find_patterns(2, 2, 3, 3, &sampled_input);
+
+            assert!(test_patterns == patterns);
+            assert_eq!(test_frequencies, frequencies);
+        }
+    }
+}
