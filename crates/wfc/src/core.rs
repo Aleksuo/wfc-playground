@@ -9,21 +9,31 @@ use crate::model::{
     wfc_state::WfcState,
 };
 
-pub fn wfc(
-    output_width: u32,
-    output_height: u32,
-    adj_rules: &AdjadencyRules,
-    frequency_hints: &FrequencyHints,
-    num_patterns: usize,
-    seed: u64,
-) -> Vec<u16> {
-    let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+pub struct WfcConfig {
+    pub output_width: u32,
+    pub output_height: u32,
+    pub adj_rules: AdjadencyRules,
+    pub frequency_hints: FrequencyHints,
+    pub num_patterns: usize,
+    pub seed: u64,
+}
+
+pub fn wfc(config: &WfcConfig) -> Vec<u16> {
+    let WfcConfig {
+        output_width,
+        output_height,
+        adj_rules,
+        frequency_hints,
+        num_patterns,
+        seed,
+    } = config;
+    let mut rng = Xoshiro256PlusPlus::seed_from_u64(*seed);
     let mut state = WfcState {
         cells: Vec::new(),
         uncollapsed_num: output_width * output_height,
         adjadency_rules: adj_rules.clone(),
     };
-    let possible_values = SimpleBitSet::full(num_patterns);
+    let possible_values = SimpleBitSet::full(*num_patterns);
     for _ in 0..(output_height * output_width) {
         let mut new_cell = Cell {
             possible_values: possible_values.clone(),
@@ -54,10 +64,10 @@ pub fn wfc(
         while let Some(next_prop) = propagation_queue.pop_front() {
             let next_cell = &state.cells[next_prop];
             let mut union_map: [SimpleBitSet; 4] = [
-                SimpleBitSet::new(num_patterns),
-                SimpleBitSet::new(num_patterns),
-                SimpleBitSet::new(num_patterns),
-                SimpleBitSet::new(num_patterns),
+                SimpleBitSet::new(*num_patterns),
+                SimpleBitSet::new(*num_patterns),
+                SimpleBitSet::new(*num_patterns),
+                SimpleBitSet::new(*num_patterns),
             ];
             // Construct union map of all possible values in each direction for the cell
             let num_directions = ALL_DIRECTIONS.len();
@@ -69,9 +79,10 @@ pub fn wfc(
                 }
             }
             // Iterate neigbors and intersect with the union set
-            for (dir, neighbor_idx) in get_neighbor_indices(next_prop, output_width, output_height)
-                .iter()
-                .enumerate()
+            for (dir, neighbor_idx) in
+                get_neighbor_indices(next_prop, *output_width, *output_height)
+                    .iter()
+                    .enumerate()
             {
                 if let Some(n_idx) = neighbor_idx {
                     let neighbor_cell = &mut state.cells[*n_idx];
@@ -163,27 +174,18 @@ mod tests {
             let height = 16;
 
             let num_checks = 5;
-            let first_run = wfc(
-                width,
-                height,
-                &test_ruleset,
-                &test_freqs,
-                test_freqs.len(),
+            let config = WfcConfig {
+                output_width: width,
+                output_height: height,
+                num_patterns: test_freqs.len(),
+                adj_rules: test_ruleset,
+                frequency_hints: test_freqs,
                 seed,
-            );
+            };
+            let first_run = wfc(&config);
 
             for _ in 0..num_checks {
-                assert_eq!(
-                    first_run,
-                    wfc(
-                        width,
-                        height,
-                        &test_ruleset,
-                        &test_freqs,
-                        test_freqs.len(),
-                        seed,
-                    )
-                )
+                assert_eq!(first_run, wfc(&config))
             }
         }
 
@@ -196,23 +198,20 @@ mod tests {
             let width = 16;
             let height = 16;
 
-            let first_run = wfc(
-                width,
-                height,
-                &test_ruleset,
-                &test_freqs,
-                test_freqs.len(),
-                seed_1,
-            );
+            let config = WfcConfig {
+                output_width: width,
+                output_height: height,
+                num_patterns: test_freqs.len(),
+                adj_rules: test_ruleset,
+                frequency_hints: test_freqs,
+                seed: seed_1,
+            };
+            let first_run = wfc(&config);
 
-            let second_run = wfc(
-                width,
-                height,
-                &test_ruleset,
-                &test_freqs,
-                test_freqs.len(),
-                seed_2,
-            );
+            let second_run = wfc(&WfcConfig {
+                seed: seed_2,
+                ..config
+            });
 
             assert_ne!(first_run, second_run);
         }

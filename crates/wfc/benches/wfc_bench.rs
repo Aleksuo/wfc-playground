@@ -1,5 +1,5 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use wfc::core::wfc;
+use wfc::core::{WfcConfig, wfc};
 use wfc::model::direction::ALL_DIRECTIONS;
 use wfc::model::simple_bit_set::SimpleBitSet;
 
@@ -25,24 +25,48 @@ fn checkerboard_frequencies() -> Vec<u32> {
 fn bench_wfc_8x8(c: &mut Criterion) {
     let rules = checkerboard_rules();
     let freqs = checkerboard_frequencies();
+    let config = WfcConfig {
+        output_width: 8,
+        output_height: 8,
+        adj_rules: rules,
+        frequency_hints: freqs,
+        num_patterns: 2,
+        seed: SEED,
+    };
     c.bench_function("wfc 8x8 checkerboard", |b| {
-        b.iter(|| wfc(8, 8, &rules, &freqs, 2, SEED));
+        b.iter(|| wfc(&config));
     });
 }
 
 fn bench_wfc_16x16(c: &mut Criterion) {
     let rules = checkerboard_rules();
     let freqs = checkerboard_frequencies();
+    let config = WfcConfig {
+        output_width: 16,
+        output_height: 16,
+        adj_rules: rules,
+        frequency_hints: freqs,
+        num_patterns: 2,
+        seed: SEED,
+    };
     c.bench_function("wfc 16x16 checkerboard", |b| {
-        b.iter(|| wfc(16, 16, &rules, &freqs, 2, SEED));
+        b.iter(|| wfc(&config));
     });
 }
 
 fn bench_wfc_32x32(c: &mut Criterion) {
     let rules = checkerboard_rules();
     let freqs = checkerboard_frequencies();
+    let config = WfcConfig {
+        output_width: 32,
+        output_height: 32,
+        adj_rules: rules,
+        frequency_hints: freqs,
+        num_patterns: 2,
+        seed: SEED,
+    };
     c.bench_function("wfc 32x32 checkerboard", |b| {
-        b.iter(|| wfc(32, 32, &rules, &freqs, 2, SEED));
+        b.iter(|| wfc(&config));
     });
 }
 
