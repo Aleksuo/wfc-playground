@@ -57,11 +57,11 @@ run = "cargo build --profile profiling -p wfc-cli --color=always && samply recor
 description = "Profile wfc-cli with samply"
 
 [tasks."bench:wfc"]
-run = "cargo bench --profile release -p wfc"
+run = "cargo bench --profile release -p wfc --bench '*'"
 description = "Run benchmarks for wfc crate using the release profile"
 
 [tasks."bench:wfc:baseline"]
-run = "cargo bench --profile release -p wfc --bench wfc_bench -- --save-baseline manual"
+run = "cargo bench --profile release -p wfc --bench '*' -- --save-baseline manual"
 description = "Save the working tree benchmarks as the manual baseline"
 
 [tasks."bench:wfc:compare"]
@@ -73,5 +73,5 @@ run = "cargo run --quiet --locked --manifest-path .mise/bench-wfc-compare/Cargo.
 description = "Compare the working tree benchmarks against its default-branch merge-base"
 
 [tasks."bench:wfc:compare:manual"]
-run = "cargo bench --profile release -p wfc --bench wfc_bench -- --baseline manual"
+run = "cargo bench --profile release -p wfc --bench '*' -- --baseline manual"
 description = "Compare the working tree benchmarks against the manual baseline"
