@@ -45,6 +45,13 @@ pub fn wfc(config: &WfcConfig) -> Vec<u16> {
         state.cells.push(new_cell);
     }
 
+    let mut union_map: [SimpleBitSet; 4] = [
+        SimpleBitSet::new(*num_patterns),
+        SimpleBitSet::new(*num_patterns),
+        SimpleBitSet::new(*num_patterns),
+        SimpleBitSet::new(*num_patterns),
+    ];
+
     while state.uncollapsed_num > 0 {
         // Find a cell to collapse
         let cell_to_collapse_idx = state
@@ -63,12 +70,8 @@ pub fn wfc(config: &WfcConfig) -> Vec<u16> {
         // While propagation queue is not empty propagate
         while let Some(next_prop) = propagation_queue.pop_front() {
             let next_cell = &state.cells[next_prop];
-            let mut union_map: [SimpleBitSet; 4] = [
-                SimpleBitSet::new(*num_patterns),
-                SimpleBitSet::new(*num_patterns),
-                SimpleBitSet::new(*num_patterns),
-                SimpleBitSet::new(*num_patterns),
-            ];
+            union_map.iter_mut().for_each(|f| f.clear_all());
+
             // Construct union map of all possible values in each direction for the cell
             let num_directions = ALL_DIRECTIONS.len();
             for possible in next_cell.possible_values.into_iter() {
