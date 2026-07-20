@@ -69,9 +69,7 @@ impl SimpleBitSet {
     }
 
     pub fn clear_all(&mut self) {
-        for i in 0..self.words.len() {
-            self.words[i] = 0u64;
-        }
+        self.words.fill(0u64);
     }
 }
 
