@@ -52,6 +52,8 @@ pub fn wfc(config: &WfcConfig) -> Vec<u16> {
         SimpleBitSet::new(*num_patterns),
     ];
 
+    let mut propagation_queue: VecDeque<usize> = VecDeque::new();
+
     while state.uncollapsed_num > 0 {
         // Find a cell to collapse
         let cell_to_collapse_idx = state
@@ -64,8 +66,6 @@ pub fn wfc(config: &WfcConfig) -> Vec<u16> {
             .unwrap();
         state.cells[cell_to_collapse_idx].collapse(frequency_hints, &mut rng);
         state.uncollapsed_num -= 1;
-        // Init propagation queue with the collapsed cell
-        let mut propagation_queue: VecDeque<usize> = VecDeque::new();
         propagation_queue.push_back(cell_to_collapse_idx);
         // While propagation queue is not empty propagate
         while let Some(next_prop) = propagation_queue.pop_front() {
