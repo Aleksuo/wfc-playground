@@ -33,8 +33,11 @@ fn run() -> Result<()> {
     };
 
     let short_commit = git(Some(&repo), &["rev-parse", "--short", &commit])?;
-    let target = repo.join("target").join("bench-comparison");
-    let marker = target.join("baselines").join(&commit);
+    let comparison = repo.join("target").join("bench-comparison");
+    // Share Criterion data between runs, but not Cargo artifacts: binaries built in the
+    // temporary worktree can contain compile-time paths that become invalid on removal.
+    let criterion_home = comparison.join("criterion");
+    let marker = comparison.join("baselines").join(&commit);
     let baseline = format!("git-{commit}");
     let cargo = env::var_os("CARGO").unwrap_or_else(|| OsString::from("cargo"));
 
@@ -42,20 +45,28 @@ fn run() -> Result<()> {
         println!("Using cached baseline {short_commit}");
     } else {
         println!("Creating baseline {short_commit} (output hidden)");
-        create_baseline(&repo, &target, &cargo, &commit, &baseline)?;
+        create_baseline(&repo, &criterion_home, &cargo, &commit, &baseline)?;
         fs::create_dir_all(marker.parent().unwrap())?;
         fs::write(&marker, [])?;
     }
 
     println!("Comparing working tree with {label} at {short_commit}");
-    benchmark(&cargo, &repo, &target, "--baseline", &baseline, false)?;
+    benchmark(
+        &cargo,
+        &repo,
+        &comparison.join("working-tree"),
+        &criterion_home,
+        "--baseline",
+        &baseline,
+        false,
+    )?;
 
     Ok(())
 }
 
 fn create_baseline(
     repo: &Path,
-    target: &Path,
+    criterion_home: &Path,
     cargo: &OsStr,
     commit: &str,
     baseline: &str,
@@ -77,13 +88,22 @@ fn create_baseline(
     hidden(command.output()?, "creating temporary worktree")?;
 
     let _guard = Worktree::new(repo, &worktree);
-    benchmark(cargo, &worktree, target, "--save-baseline", baseline, true)
+    benchmark(
+        cargo,
+        &worktree,
+        &worktree.join("target").join("bench-comparison"),
+        criterion_home,
+        "--save-baseline",
+        baseline,
+        true,
+    )
 }
 
 fn benchmark(
     cargo: &OsStr,
     working_dir: &Path,
-    target: &Path,
+    cargo_target: &Path,
+    criterion_home: &Path,
     flag: &str,
     baseline: &str,
     hide_output: bool,
@@ -91,7 +111,8 @@ fn benchmark(
     let mut command = Command::new(cargo);
     command
         .current_dir(working_dir)
-        .env("CARGO_TARGET_DIR", target)
+        .env("CARGO_TARGET_DIR", cargo_target)
+        .env("CRITERION_HOME", criterion_home)
         .args([
             "bench",
             "--profile",
@@ -99,7 +120,7 @@ fn benchmark(
             "-p",
             "wfc",
             "--bench",
-            "wfc_bench",
+            "*",
             "--",
             flag,
             baseline,

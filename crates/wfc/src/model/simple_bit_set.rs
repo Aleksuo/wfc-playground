@@ -67,6 +67,10 @@ impl SimpleBitSet {
         }
         sum as usize
     }
+
+    pub fn clear_all(&mut self) {
+        self.words.fill(0u64);
+    }
 }
 
 impl<'a> IntoIterator for &'a SimpleBitSet {
