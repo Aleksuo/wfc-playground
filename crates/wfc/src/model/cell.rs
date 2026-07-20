@@ -47,8 +47,7 @@ impl Cell {
                 break;
             }
         }
-        let max_value = frequency_hints.len();
-        self.possible_values = SimpleBitSet::new(max_value);
+        self.possible_values.clear_all();
         self.possible_values.set(chosen);
         self.collapsed_val = Some(chosen as u16);
         self.is_collapsed = true;
