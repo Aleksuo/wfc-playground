@@ -54,6 +54,20 @@ impl SimpleBitSet {
         }
     }
 
+    pub fn intersect_with_stats(&mut self, other: &SimpleBitSet) -> (bool, usize) {
+        let mut changed = false;
+        let mut count = 0;
+        for (word, other) in self.words.iter_mut().zip(&other.words) {
+            let previous = *word;
+            let intersection = previous & *other;
+
+            changed |= intersection != previous;
+            count += intersection.count_ones() as usize;
+            *word = intersection;
+        }
+        (changed, count)
+    }
+
     pub fn union_with(&mut self, other: &SimpleBitSet) {
         for i in 0..self.words.len() {
             self.words[i] |= other.words[i];
