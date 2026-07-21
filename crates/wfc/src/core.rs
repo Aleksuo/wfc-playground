@@ -93,24 +93,28 @@ pub fn wfc(config: &WfcConfig) -> Vec<u16> {
                         continue;
                     }
                     let dir_union = &union_map[dir];
-                    let possible_val_len = neighbor_cell.possible_values.count();
-                    // println!("Union {:?} {:?}", &dir, &union_map.get(&dir));
-                    // println!("Neighbor possible: {:?}", &neighbor_cell.possible_values);
-                    neighbor_cell.possible_values.intersect_with(dir_union);
+                    let (changed, new_count) = neighbor_cell
+                        .possible_values
+                        .intersect_with_stats(dir_union);
 
-                    let new_possible_val_len = neighbor_cell.possible_values.count();
-                    neighbor_cell.calculate_entropy(frequency_hints, &mut rng);
-                    if new_possible_val_len == 0 {
+                    if !changed {
+                        continue;
+                    }
+
+                    match new_count {
                         // TODO: Implement handling for contradictions
-                        panic!("Contradiction");
-                    } else if new_possible_val_len == 1 && !neighbor_cell.is_collapsed {
-                        neighbor_cell.collapse(frequency_hints, &mut rng);
-                        state.uncollapsed_num -= 1;
-                        if state.uncollapsed_num != 0 {
+                        0 => panic!("Contradiction"),
+                        1 => {
+                            neighbor_cell.collapse(frequency_hints, &mut rng);
+                            state.uncollapsed_num -= 1;
+                            if state.uncollapsed_num != 0 {
+                                propagation_queue.push_back(*n_idx);
+                            }
+                        }
+                        _ => {
+                            neighbor_cell.calculate_entropy(frequency_hints, &mut rng);
                             propagation_queue.push_back(*n_idx);
                         }
-                    } else if possible_val_len > neighbor_cell.possible_values.count() {
-                        propagation_queue.push_back(*n_idx);
                     }
                 }
             }
