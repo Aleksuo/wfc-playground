@@ -175,7 +175,7 @@ mod tests {
         #[test]
         fn output_is_deterministic_with_same_seed() {
             let test_ruleset = checkerboard_rules();
-            let test_freqs = checkerboard_frequencies();
+            let test_freqs = FrequencyHints::new(checkerboard_frequencies());
             let seed: u64 = 27;
             let width = 16;
             let height = 16;
@@ -184,7 +184,7 @@ mod tests {
             let config = WfcConfig {
                 output_width: width,
                 output_height: height,
-                num_patterns: test_freqs.len(),
+                num_patterns: test_freqs.weights.len(),
                 adj_rules: test_ruleset,
                 frequency_hints: test_freqs,
                 seed,
@@ -199,7 +199,7 @@ mod tests {
         #[test]
         fn different_seed_changes_output() {
             let test_ruleset = checkerboard_rules();
-            let test_freqs = checkerboard_frequencies();
+            let test_freqs = FrequencyHints::new(checkerboard_frequencies());
             let seed_1: u64 = 27;
             let seed_2: u64 = 10;
             let width = 16;
@@ -208,7 +208,7 @@ mod tests {
             let config = WfcConfig {
                 output_width: width,
                 output_height: height,
-                num_patterns: test_freqs.len(),
+                num_patterns: test_freqs.weights.len(),
                 adj_rules: test_ruleset,
                 frequency_hints: test_freqs,
                 seed: seed_1,
