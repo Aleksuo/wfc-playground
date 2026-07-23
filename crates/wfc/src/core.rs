@@ -40,6 +40,7 @@ pub fn wfc(config: &WfcConfig) -> Vec<u16> {
             entropy: None,
             is_collapsed: false,
             collapsed_val: None,
+            tie_breaker_noise: rng.random_range(0.0..1e-6),
         };
         new_cell.calculate_entropy(frequency_hints, &mut rng);
         state.cells.push(new_cell);

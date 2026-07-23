@@ -7,6 +7,7 @@ pub struct Cell {
     pub collapsed_val: Option<u16>,
     pub entropy: Option<f32>,
     pub is_collapsed: bool,
+    pub tie_breaker_noise: f32,
 }
 
 impl Cell {
@@ -17,10 +18,10 @@ impl Cell {
             total_weight += frequency_hints.weights[val];
             weighted_log_sum += frequency_hints.weighted_logs[val];
         }
-        let tie_breaker_noise = rng.random_range(0.0..1e-6);
         let total_weight = total_weight as f32;
-        self.entropy =
-            Some((total_weight.log2() - (weighted_log_sum / total_weight)) + tie_breaker_noise);
+        self.entropy = Some(
+            (total_weight.log2() - (weighted_log_sum / total_weight)) + self.tie_breaker_noise,
+        );
     }
     pub fn collapse(&mut self, frequency_hints: &FrequencyHints, rng: &mut impl Rng) {
         let total_weight: u32 = self
