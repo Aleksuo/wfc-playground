@@ -1,28 +1,45 @@
 use rand::{Rng, RngExt};
 
-use crate::model::{pattern_model::FrequencyHints, simple_bit_set::SimpleBitSet};
+use crate::{
+    model::{pattern_model::FrequencyHints, simple_bit_set::SimpleBitSet},
+    util::entropy::calculate_shannon_entropy,
+};
 
 pub struct Cell {
     pub possible_values: SimpleBitSet,
     pub collapsed_val: Option<u16>,
-    pub entropy: Option<f32>,
+    pub entropy: f32,
     pub is_collapsed: bool,
     pub tie_breaker_noise: f32,
 }
 
 impl Cell {
-    pub fn calculate_entropy(&mut self, frequency_hints: &FrequencyHints, rng: &mut impl Rng) {
-        let mut total_weight = 0u32;
+    pub fn new(
+        initial_possible_values: SimpleBitSet,
+        initial_entropy: f32,
+        rng: &mut impl Rng,
+    ) -> Self {
+        let tie_breaker_noise = rng.random_range(0.0..1e-6);
+        Self {
+            possible_values: initial_possible_values,
+            collapsed_val: None,
+            entropy: initial_entropy + tie_breaker_noise,
+            is_collapsed: false,
+            tie_breaker_noise,
+        }
+    }
+
+    pub fn calculate_entropy(&mut self, frequency_hints: &FrequencyHints) {
+        let mut weight_sum = 0u32;
         let mut weighted_log_sum = 0.0f32;
         for val in self.possible_values.into_iter() {
-            total_weight += frequency_hints.weights[val];
+            weight_sum += frequency_hints.weights[val];
             weighted_log_sum += frequency_hints.weighted_logs[val];
         }
-        let total_weight = total_weight as f32;
-        self.entropy = Some(
-            (total_weight.log2() - (weighted_log_sum / total_weight)) + self.tie_breaker_noise,
-        );
+        self.entropy =
+            calculate_shannon_entropy(weight_sum as f32, weighted_log_sum) + self.tie_breaker_noise;
     }
+
     pub fn collapse(&mut self, frequency_hints: &FrequencyHints, rng: &mut impl Rng) {
         let total_weight: u32 = self
             .possible_values

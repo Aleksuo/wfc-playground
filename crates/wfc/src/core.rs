@@ -1,12 +1,15 @@
 use rand::{prelude::*, rngs::Xoshiro256PlusPlus};
 use std::collections::VecDeque;
 
-use crate::model::{
-    cell::Cell,
-    direction::{ALL_DIRECTIONS, Direction},
-    pattern_model::{AdjadencyRules, FrequencyHints},
-    simple_bit_set::SimpleBitSet,
-    wfc_state::WfcState,
+use crate::{
+    model::{
+        cell::Cell,
+        direction::{ALL_DIRECTIONS, Direction},
+        pattern_model::{AdjadencyRules, FrequencyHints},
+        simple_bit_set::SimpleBitSet,
+        wfc_state::WfcState,
+    },
+    util::entropy::calculate_shannon_entropy,
 };
 
 pub struct WfcConfig {
@@ -33,17 +36,14 @@ pub fn wfc(config: &WfcConfig) -> Vec<u16> {
         uncollapsed_num: output_width * output_height,
         adjadency_rules: adj_rules.clone(),
     };
-    let possible_values = SimpleBitSet::full(*num_patterns);
+    let initial_possible_values = SimpleBitSet::full(*num_patterns);
+    let initial_entropy = calculate_initial_entropy(frequency_hints);
     for _ in 0..(output_height * output_width) {
-        let mut new_cell = Cell {
-            possible_values: possible_values.clone(),
-            entropy: None,
-            is_collapsed: false,
-            collapsed_val: None,
-            tie_breaker_noise: rng.random_range(0.0..1e-6),
-        };
-        new_cell.calculate_entropy(frequency_hints, &mut rng);
-        state.cells.push(new_cell);
+        state.cells.push(Cell::new(
+            initial_possible_values.clone(),
+            initial_entropy,
+            &mut rng,
+        ));
     }
 
     let mut union_map: [SimpleBitSet; 4] = [
@@ -113,7 +113,7 @@ pub fn wfc(config: &WfcConfig) -> Vec<u16> {
                             }
                         }
                         _ => {
-                            neighbor_cell.calculate_entropy(frequency_hints, &mut rng);
+                            neighbor_cell.calculate_entropy(frequency_hints);
                             propagation_queue.push_back(*n_idx);
                         }
                     }
@@ -122,6 +122,12 @@ pub fn wfc(config: &WfcConfig) -> Vec<u16> {
         }
     }
     state.get_sampled_output()
+}
+
+fn calculate_initial_entropy(frequency_hints: &FrequencyHints) -> f32 {
+    let total_weight: f32 = frequency_hints.weights.iter().sum::<u32>() as f32;
+    let total_log_weight: f32 = frequency_hints.weighted_logs.iter().sum();
+    calculate_shannon_entropy(total_weight, total_log_weight)
 }
 
 #[inline(always)]
