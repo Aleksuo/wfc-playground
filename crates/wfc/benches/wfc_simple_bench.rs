@@ -1,13 +1,14 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use wfc::core::{WfcConfig, wfc};
 use wfc::model::direction::ALL_DIRECTIONS;
+use wfc::model::pattern_model::FrequencyHints;
 use wfc::model::simple_bit_set::SimpleBitSet;
 
 const SEED: u64 = 12;
 
 fn preprocess_checkerboard(width: u32, height: u32) -> WfcConfig {
     let rules = checkerboard_rules();
-    let freqs = checkerboard_frequencies();
+    let freqs = FrequencyHints::new(checkerboard_frequencies());
     WfcConfig {
         output_width: width,
         output_height: height,

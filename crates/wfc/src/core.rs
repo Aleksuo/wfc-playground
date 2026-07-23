@@ -1,12 +1,15 @@
 use rand::{prelude::*, rngs::Xoshiro256PlusPlus};
 use std::collections::VecDeque;
 
-use crate::model::{
-    cell::Cell,
-    direction::{ALL_DIRECTIONS, Direction},
-    pattern_model::{AdjadencyRules, FrequencyHints},
-    simple_bit_set::SimpleBitSet,
-    wfc_state::WfcState,
+use crate::{
+    model::{
+        cell::Cell,
+        direction::{ALL_DIRECTIONS, Direction},
+        pattern_model::{AdjadencyRules, FrequencyHints},
+        simple_bit_set::SimpleBitSet,
+        wfc_state::WfcState,
+    },
+    util::entropy::calculate_shannon_entropy,
 };
 
 pub struct WfcConfig {
@@ -33,16 +36,14 @@ pub fn wfc(config: &WfcConfig) -> Vec<u16> {
         uncollapsed_num: output_width * output_height,
         adjadency_rules: adj_rules.clone(),
     };
-    let possible_values = SimpleBitSet::full(*num_patterns);
+    let initial_possible_values = SimpleBitSet::full(*num_patterns);
+    let initial_entropy = calculate_initial_entropy(frequency_hints);
     for _ in 0..(output_height * output_width) {
-        let mut new_cell = Cell {
-            possible_values: possible_values.clone(),
-            entropy: None,
-            is_collapsed: false,
-            collapsed_val: None,
-        };
-        new_cell.calculate_entropy(frequency_hints, &mut rng);
-        state.cells.push(new_cell);
+        state.cells.push(Cell::new(
+            initial_possible_values.clone(),
+            initial_entropy,
+            &mut rng,
+        ));
     }
 
     let mut union_map: [SimpleBitSet; 4] = [
@@ -93,30 +94,40 @@ pub fn wfc(config: &WfcConfig) -> Vec<u16> {
                         continue;
                     }
                     let dir_union = &union_map[dir];
-                    let possible_val_len = neighbor_cell.possible_values.count();
-                    // println!("Union {:?} {:?}", &dir, &union_map.get(&dir));
-                    // println!("Neighbor possible: {:?}", &neighbor_cell.possible_values);
-                    neighbor_cell.possible_values.intersect_with(dir_union);
+                    let (changed, new_count) = neighbor_cell
+                        .possible_values
+                        .intersect_with_stats(dir_union);
 
-                    let new_possible_val_len = neighbor_cell.possible_values.count();
-                    neighbor_cell.calculate_entropy(frequency_hints, &mut rng);
-                    if new_possible_val_len == 0 {
+                    if !changed {
+                        continue;
+                    }
+
+                    match new_count {
                         // TODO: Implement handling for contradictions
-                        panic!("Contradiction");
-                    } else if new_possible_val_len == 1 && !neighbor_cell.is_collapsed {
-                        neighbor_cell.collapse(frequency_hints, &mut rng);
-                        state.uncollapsed_num -= 1;
-                        if state.uncollapsed_num != 0 {
+                        0 => panic!("Contradiction"),
+                        1 => {
+                            neighbor_cell.collapse(frequency_hints, &mut rng);
+                            state.uncollapsed_num -= 1;
+                            if state.uncollapsed_num != 0 {
+                                propagation_queue.push_back(*n_idx);
+                            }
+                        }
+                        _ => {
+                            neighbor_cell.calculate_entropy(frequency_hints);
                             propagation_queue.push_back(*n_idx);
                         }
-                    } else if possible_val_len > neighbor_cell.possible_values.count() {
-                        propagation_queue.push_back(*n_idx);
                     }
                 }
             }
         }
     }
     state.get_sampled_output()
+}
+
+fn calculate_initial_entropy(frequency_hints: &FrequencyHints) -> f32 {
+    let total_weight: f32 = frequency_hints.weights.iter().sum::<u32>() as f32;
+    let total_log_weight: f32 = frequency_hints.weighted_logs.iter().sum();
+    calculate_shannon_entropy(total_weight, total_log_weight)
 }
 
 #[inline(always)]
@@ -171,7 +182,7 @@ mod tests {
         #[test]
         fn output_is_deterministic_with_same_seed() {
             let test_ruleset = checkerboard_rules();
-            let test_freqs = checkerboard_frequencies();
+            let test_freqs = FrequencyHints::new(checkerboard_frequencies());
             let seed: u64 = 27;
             let width = 16;
             let height = 16;
@@ -180,7 +191,7 @@ mod tests {
             let config = WfcConfig {
                 output_width: width,
                 output_height: height,
-                num_patterns: test_freqs.len(),
+                num_patterns: test_freqs.weights.len(),
                 adj_rules: test_ruleset,
                 frequency_hints: test_freqs,
                 seed,
@@ -195,7 +206,7 @@ mod tests {
         #[test]
         fn different_seed_changes_output() {
             let test_ruleset = checkerboard_rules();
-            let test_freqs = checkerboard_frequencies();
+            let test_freqs = FrequencyHints::new(checkerboard_frequencies());
             let seed_1: u64 = 27;
             let seed_2: u64 = 10;
             let width = 16;
@@ -204,7 +215,7 @@ mod tests {
             let config = WfcConfig {
                 output_width: width,
                 output_height: height,
-                num_patterns: test_freqs.len(),
+                num_patterns: test_freqs.weights.len(),
                 adj_rules: test_ruleset,
                 frequency_hints: test_freqs,
                 seed: seed_1,

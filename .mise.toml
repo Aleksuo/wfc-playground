@@ -75,3 +75,8 @@ description = "Compare the working tree benchmarks against its default-branch me
 [tasks."bench:wfc:compare:manual"]
 run = "cargo bench --profile release -p wfc --bench '*' -- --baseline manual"
 description = "Compare the working tree benchmarks against the manual baseline"
+
+[tasks."hooks:install"]
+description = "Install the repository Git hooks"
+run = "chmod +x .githooks/prepare-commit-msg && git config core.hooksPath .githooks"
+run_windows = "git config core.hooksPath .githooks"
