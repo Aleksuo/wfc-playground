@@ -1,0 +1,32 @@
+#!/bin/sh
+
+message_file="$1"
+message_source="${2:-}"
+
+case "${message_source}" in
+  merge|squash)
+    exit 0
+    ;;
+esac
+
+branch="$(git symbolic-ref --quiet --short HEAD 2>/dev/null)" || exit 0
+ticket="$(
+  printf '%s' "${branch}" |
+    sed -nE 's/^[Ww][Ff][Cc]-([0-9]+)([-/].*)?$/WFC-\1/p'
+)"
+
+[ -n "${ticket}" ] || exit 0
+
+first_line="$(head -n 1 "${message_file}")"
+printf '%s\n' "${first_line}" | grep -Eiq "^${ticket}:" && exit 0
+
+temporary_file="${message_file}.wfc-prefix.$$"
+trap 'rm -f "${temporary_file}"' EXIT
+
+{
+  printf '%s: ' "${ticket}"
+  cat "${message_file}"
+} > "${temporary_file}"
+
+mv "${temporary_file}" "${message_file}"
+trap - EXIT
