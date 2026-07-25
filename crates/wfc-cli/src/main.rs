@@ -1,4 +1,4 @@
-use std::{error::Error, num::NonZeroU32, process::ExitCode};
+use std::{num::NonZeroU32, process::ExitCode};
 
 use image::ImageReader;
 
