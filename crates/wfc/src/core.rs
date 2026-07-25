@@ -1,7 +1,8 @@
 use rand::{prelude::*, rngs::Xoshiro256PlusPlus};
-use std::collections::VecDeque;
+use std::{collections::VecDeque, num::NonZeroU32};
 
 use crate::{
+    core::ContradictionStrategy::{Fail, Retry},
     model::{
         cell::Cell,
         direction::{ALL_DIRECTIONS, Direction},
@@ -12,25 +13,57 @@ use crate::{
     util::entropy::calculate_shannon_entropy,
 };
 
+pub enum ContradictionStrategy {
+    Fail,
+    Retry { max_attempts: NonZeroU32 },
+}
+
+#[derive(Debug)]
+pub enum WfcError {
+    AttemptsExhausted,
+}
+
+enum WfcRunError {
+    Contradiction,
+}
+
 pub struct WfcConfig {
     pub output_width: u32,
     pub output_height: u32,
     pub adj_rules: AdjadencyRules,
     pub frequency_hints: FrequencyHints,
     pub num_patterns: usize,
-    pub seed: u64,
+    pub run_seed: u64,
+    pub contradiction_strategy: ContradictionStrategy,
 }
 
-pub fn wfc(config: &WfcConfig) -> Vec<u16> {
+pub fn wfc(config: &WfcConfig) -> Result<Vec<u16>, WfcError> {
+    let max_attempts = match config.contradiction_strategy {
+        Fail => 1,
+        Retry { max_attempts } => max_attempts.get(),
+    };
+
+    for attempt in 0..max_attempts {
+        let seed = config.run_seed.wrapping_add(attempt as u64);
+        if let Ok(res) = run_attempt(config, seed) {
+            return Ok(res);
+        }
+    }
+
+    Err(WfcError::AttemptsExhausted)
+}
+
+fn run_attempt(config: &WfcConfig, seed: u64) -> Result<Vec<u16>, WfcRunError> {
     let WfcConfig {
         output_width,
         output_height,
         adj_rules,
         frequency_hints,
         num_patterns,
-        seed,
+        run_seed: _,
+        contradiction_strategy: _,
     } = config;
-    let mut rng = Xoshiro256PlusPlus::seed_from_u64(*seed);
+    let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
     let mut state = WfcState {
         cells: Vec::new(),
         uncollapsed_num: output_width * output_height,
@@ -104,7 +137,7 @@ pub fn wfc(config: &WfcConfig) -> Vec<u16> {
 
                     match new_count {
                         // TODO: Implement handling for contradictions
-                        0 => panic!("Contradiction"),
+                        0 => return Err(WfcRunError::Contradiction),
                         1 => {
                             neighbor_cell.collapse(frequency_hints, &mut rng);
                             state.uncollapsed_num -= 1;
@@ -121,7 +154,7 @@ pub fn wfc(config: &WfcConfig) -> Vec<u16> {
             }
         }
     }
-    state.get_sampled_output()
+    Ok(state.get_sampled_output())
 }
 
 fn calculate_initial_entropy(frequency_hints: &FrequencyHints) -> f32 {
@@ -183,7 +216,7 @@ mod tests {
         fn output_is_deterministic_with_same_seed() {
             let test_ruleset = checkerboard_rules();
             let test_freqs = FrequencyHints::new(checkerboard_frequencies());
-            let seed: u64 = 27;
+            let run_seed: u64 = 27;
             let width = 16;
             let height = 16;
 
@@ -194,12 +227,13 @@ mod tests {
                 num_patterns: test_freqs.weights.len(),
                 adj_rules: test_ruleset,
                 frequency_hints: test_freqs,
-                seed,
+                run_seed,
+                contradiction_strategy: ContradictionStrategy::Fail,
             };
-            let first_run = wfc(&config);
+            let first_run = wfc(&config).unwrap();
 
             for _ in 0..num_checks {
-                assert_eq!(first_run, wfc(&config))
+                assert_eq!(first_run, wfc(&config).unwrap())
             }
         }
 
@@ -218,14 +252,17 @@ mod tests {
                 num_patterns: test_freqs.weights.len(),
                 adj_rules: test_ruleset,
                 frequency_hints: test_freqs,
-                seed: seed_1,
+                run_seed: seed_1,
+                contradiction_strategy: ContradictionStrategy::Fail,
             };
-            let first_run = wfc(&config);
+            let first_run = wfc(&config).unwrap();
 
             let second_run = wfc(&WfcConfig {
-                seed: seed_2,
+                run_seed: seed_2,
+                contradiction_strategy: ContradictionStrategy::Fail,
                 ..config
-            });
+            })
+            .unwrap();
 
             assert_ne!(first_run, second_run);
         }

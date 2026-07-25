@@ -1,6 +1,6 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use image::ImageReader;
-use wfc::core::{WfcConfig, wfc};
+use wfc::core::{ContradictionStrategy, WfcConfig, wfc};
 use wfc::preprocessing::create_pattern_model;
 
 const SEED: u64 = 10;
@@ -18,7 +18,8 @@ fn preprocess_beach_image(width: u32, height: u32) -> WfcConfig {
         num_patterns: pattern_model.patterns.len(),
         adj_rules: pattern_model.adjadency_rules,
         frequency_hints: pattern_model.frequency_hints,
-        seed: SEED,
+        run_seed: SEED,
+        contradiction_strategy: ContradictionStrategy::Fail,
     }
 }
 
