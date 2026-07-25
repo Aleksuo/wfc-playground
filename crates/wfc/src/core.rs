@@ -38,14 +38,24 @@ pub struct WfcConfig {
 }
 
 pub fn wfc(config: &WfcConfig) -> Result<Vec<u16>, WfcError> {
-    let max_attempts = match config.contradiction_strategy {
+    run_with_contradiction_strategy(config.run_seed, &config.contradiction_strategy, |seed| {
+        run_attempt(config, seed)
+    })
+}
+
+fn run_with_contradiction_strategy(
+    run_seed: u64,
+    contradiction_strategy: &ContradictionStrategy,
+    mut run_attempt: impl FnMut(u64) -> Result<Vec<u16>, WfcRunError>,
+) -> Result<Vec<u16>, WfcError> {
+    let max_attempts = match contradiction_strategy {
         Fail => 1,
         Retry { max_attempts } => max_attempts.get(),
     };
 
-    for attempt in 0..max_attempts {
-        let seed = config.run_seed.wrapping_add(attempt as u64);
-        if let Ok(res) = run_attempt(config, seed) {
+    for attempt_index in 0..max_attempts {
+        let seed = run_seed.wrapping_add(attempt_index as u64);
+        if let Ok(res) = run_attempt(seed) {
             return Ok(res);
         }
     }
@@ -265,6 +275,56 @@ mod tests {
             .unwrap();
 
             assert_ne!(first_run, second_run);
+        }
+
+        #[test]
+        fn fail_contradiction_strategy_returns_error_on_first_failure() {
+            let mut attempted_seeds = Vec::new();
+
+            let result =
+                run_with_contradiction_strategy(10, &ContradictionStrategy::Fail, |seed| {
+                    attempted_seeds.push(seed);
+                    Err(WfcRunError::Contradiction)
+                });
+
+            assert!(matches!(result, Err(WfcError::AttemptsExhausted)));
+            assert_eq!(attempted_seeds, vec![10]);
+        }
+
+        #[test]
+        fn retry_contradiction_strategy_retries_attempts_the_specified_amount() {
+            let strategy = ContradictionStrategy::Retry {
+                max_attempts: NonZeroU32::new(3).unwrap(),
+            };
+            let mut attempted_seeds = Vec::new();
+
+            let result = run_with_contradiction_strategy(u64::MAX - 1, &strategy, |seed| {
+                attempted_seeds.push(seed);
+                if attempted_seeds.len() == 3 {
+                    Ok(vec![42])
+                } else {
+                    Err(WfcRunError::Contradiction)
+                }
+            });
+
+            assert_eq!(result.unwrap(), vec![42]);
+            assert_eq!(attempted_seeds, vec![u64::MAX - 1, u64::MAX, 0]);
+        }
+
+        #[test]
+        fn retry_contradiction_strategy_exhausts_on_exceeding_max_attempts() {
+            let strategy = ContradictionStrategy::Retry {
+                max_attempts: NonZeroU32::new(3).unwrap(),
+            };
+            let mut attempted_seeds = Vec::new();
+
+            let result = run_with_contradiction_strategy(10, &strategy, |seed| {
+                attempted_seeds.push(seed);
+                Err(WfcRunError::Contradiction)
+            });
+
+            assert!(matches!(result, Err(WfcError::AttemptsExhausted)));
+            assert_eq!(attempted_seeds, vec![10, 11, 12]);
         }
     }
 }
