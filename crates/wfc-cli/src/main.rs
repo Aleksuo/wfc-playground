@@ -3,7 +3,7 @@ use std::{num::NonZeroU32, process::ExitCode};
 use image::ImageReader;
 
 use wfc::{
-    core::{ContradictionStrategy, WfcConfig, wfc},
+    core::{ContradictionStrategy, WfcModel, WfcRunConfig, solve},
     postprocessing::reconstruct_image,
     preprocessing::create_pattern_model,
 };
@@ -16,18 +16,20 @@ fn main() -> ExitCode {
     let result = create_pattern_model(input_img, 4, 4);
     let grid_width = 64;
     let grid_height = 64;
-    let config = WfcConfig {
-        output_width: grid_width,
-        output_height: grid_height,
+    let model = WfcModel {
         num_patterns: result.patterns.len(),
         adj_rules: result.adjadency_rules,
         frequency_hints: result.frequency_hints,
-        run_seed: 10,
+    };
+    let run_config = WfcRunConfig {
+        output_width: grid_width,
+        output_height: grid_height,
+        seed: 10,
         contradiction_strategy: ContradictionStrategy::Retry {
             max_attempts: NonZeroU32::new(5).unwrap(),
         },
     };
-    if let Ok(output) = wfc(&config) {
+    if let Ok(output) = solve(&model, &run_config) {
         let img = reconstruct_image(
             &output,
             grid_width,

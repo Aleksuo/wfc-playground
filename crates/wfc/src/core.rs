@@ -27,20 +27,25 @@ enum WfcRunError {
     Contradiction,
 }
 
-pub struct WfcConfig {
-    pub output_width: u32,
-    pub output_height: u32,
+pub struct WfcModel {
     pub adj_rules: AdjadencyRules,
     pub frequency_hints: FrequencyHints,
     pub num_patterns: usize,
-    pub run_seed: u64,
+}
+
+pub struct WfcRunConfig {
+    pub output_width: u32,
+    pub output_height: u32,
+    pub seed: u64,
     pub contradiction_strategy: ContradictionStrategy,
 }
 
-pub fn wfc(config: &WfcConfig) -> Result<Vec<u16>, WfcError> {
-    run_with_contradiction_strategy(config.run_seed, &config.contradiction_strategy, |seed| {
-        run_attempt(config, seed)
-    })
+pub fn solve(model: &WfcModel, run_config: &WfcRunConfig) -> Result<Vec<u16>, WfcError> {
+    run_with_contradiction_strategy(
+        run_config.seed,
+        &run_config.contradiction_strategy,
+        |derived_seed| run_attempt(model, run_config, derived_seed),
+    )
 }
 
 fn run_with_contradiction_strategy(
@@ -54,8 +59,8 @@ fn run_with_contradiction_strategy(
     };
 
     for attempt_index in 0..max_attempts {
-        let seed = run_seed.wrapping_add(attempt_index as u64);
-        if let Ok(res) = run_attempt(seed) {
+        let derived_seed = run_seed.wrapping_add(attempt_index as u64);
+        if let Ok(res) = run_attempt(derived_seed) {
             return Ok(res);
         }
     }
@@ -63,25 +68,28 @@ fn run_with_contradiction_strategy(
     Err(WfcError::AttemptsExhausted)
 }
 
-fn run_attempt(config: &WfcConfig, seed: u64) -> Result<Vec<u16>, WfcRunError> {
-    let WfcConfig {
-        output_width,
-        output_height,
+fn run_attempt(
+    model: &WfcModel,
+    run_config: &WfcRunConfig,
+    derived_seed: u64,
+) -> Result<Vec<u16>, WfcRunError> {
+    let WfcModel {
         adj_rules,
         frequency_hints,
         num_patterns,
-        run_seed: _,
-        contradiction_strategy: _,
-    } = config;
-    let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
+    } = model;
+    let output_width = run_config.output_width;
+    let output_height = run_config.output_height;
+    let total_output = output_height * output_width;
+    let mut rng = Xoshiro256PlusPlus::seed_from_u64(derived_seed);
     let mut state = WfcState {
         cells: Vec::new(),
-        uncollapsed_num: output_width * output_height,
+        uncollapsed_num: total_output,
         adjadency_rules: adj_rules.clone(),
     };
     let initial_possible_values = SimpleBitSet::full(*num_patterns);
     let initial_entropy = calculate_initial_entropy(frequency_hints);
-    for _ in 0..(output_height * output_width) {
+    for _ in 0..(total_output) {
         state.cells.push(Cell::new(
             initial_possible_values.clone(),
             initial_entropy,
@@ -126,10 +134,9 @@ fn run_attempt(config: &WfcConfig, seed: u64) -> Result<Vec<u16>, WfcRunError> {
                 }
             }
             // Iterate neigbors and intersect with the union set
-            for (dir, neighbor_idx) in
-                get_neighbor_indices(next_prop, *output_width, *output_height)
-                    .iter()
-                    .enumerate()
+            for (dir, neighbor_idx) in get_neighbor_indices(next_prop, output_width, output_height)
+                .iter()
+                .enumerate()
             {
                 if let Some(n_idx) = neighbor_idx {
                     let neighbor_cell = &mut state.cells[*n_idx];
@@ -231,19 +238,21 @@ mod tests {
             let height = 16;
 
             let num_checks = 5;
-            let config = WfcConfig {
-                output_width: width,
-                output_height: height,
+            let model = WfcModel {
                 num_patterns: test_freqs.weights.len(),
                 adj_rules: test_ruleset,
                 frequency_hints: test_freqs,
-                run_seed,
+            };
+            let run_config = WfcRunConfig {
+                output_width: width,
+                output_height: height,
+                seed: run_seed,
                 contradiction_strategy: ContradictionStrategy::Fail,
             };
-            let first_run = wfc(&config).unwrap();
+            let first_run = solve(&model, &run_config).unwrap();
 
             for _ in 0..num_checks {
-                assert_eq!(first_run, wfc(&config).unwrap())
+                assert_eq!(first_run, solve(&model, &run_config).unwrap())
             }
         }
 
@@ -256,22 +265,26 @@ mod tests {
             let width = 16;
             let height = 16;
 
-            let config = WfcConfig {
-                output_width: width,
-                output_height: height,
+            let model = WfcModel {
                 num_patterns: test_freqs.weights.len(),
                 adj_rules: test_ruleset,
                 frequency_hints: test_freqs,
-                run_seed: seed_1,
+            };
+            let run_config = WfcRunConfig {
+                output_width: width,
+                output_height: height,
+                seed: seed_1,
                 contradiction_strategy: ContradictionStrategy::Fail,
             };
-            let first_run = wfc(&config).unwrap();
+            let first_run = solve(&model, &run_config).unwrap();
 
-            let second_run = wfc(&WfcConfig {
-                run_seed: seed_2,
-                contradiction_strategy: ContradictionStrategy::Fail,
-                ..config
-            })
+            let second_run = solve(
+                &model,
+                &WfcRunConfig {
+                    seed: seed_2,
+                    ..run_config
+                },
+            )
             .unwrap();
 
             assert_ne!(first_run, second_run);
