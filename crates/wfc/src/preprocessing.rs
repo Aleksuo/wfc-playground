@@ -1,80 +1,51 @@
 use std::collections::{BTreeSet, HashMap};
 
-use image::{DynamicImage, Rgb};
-
 use crate::model::{
+    dimensions::Dimensions,
     direction::ALL_DIRECTIONS,
     pattern::Pattern,
     pattern_model::{AdjadencyRules, FrequencyHints, PatternModel},
+    sampled::Sampled,
     simple_bit_set::SimpleBitSet,
 };
 
-pub fn create_pattern_model(
-    img: DynamicImage,
-    pattern_width: u32,
-    pattern_height: u32,
+pub fn create_pattern_model<T>(
+    input: &Sampled<T, 2>,
+    pattern_dimensions: &Dimensions<2>,
 ) -> PatternModel {
-    let (width, height, sample, palette) = sample_dynamic_image(&img);
-    // print_sampled_input(width, height, &sample);
-    let (patterns, frequency_hints) =
-        find_patterns(pattern_width, pattern_height, width, height, &sample);
+    let (patterns, frequency_hints) = find_patterns(pattern_dimensions, &input);
     // print_patterns(&patterns, &frequency_hints);
     let adjadency_rules = recognize_adjadency_rules(&patterns);
     // print_adjadency_rule(&adjadency_rules);
     PatternModel {
-        palette,
         patterns,
         adjadency_rules,
         frequency_hints,
-        pattern_height,
-        pattern_width,
     }
 }
 
-fn sample_dynamic_image(img: &DynamicImage) -> (u32, u32, Vec<u16>, Vec<Rgb<u8>>) {
-    let img = img.to_rgb8();
-    let (width, height) = img.dimensions();
-    let mut sample: Vec<u16> = vec![0; (height * width) as usize];
-    let mut palette: Vec<Rgb<u8>> = vec![];
-    for (x, y, pixel) in img.enumerate_pixels() {
-        let k = match palette.iter().position(|c| c == pixel) {
-            Some(i) => i,
-            None => {
-                palette.push(*pixel);
-                palette.len() - 1
-            }
-        };
-        let index = x + y * width;
-        sample[index as usize] = k as u16;
-    }
-    (width, height, sample, palette)
-}
-
-fn find_patterns(
-    pattern_width: u32,
-    pattern_height: u32,
-    input_width: u32,
-    input_height: u32,
-    sampled_input: &[u16],
+fn find_patterns<T>(
+    pattern_dimensions: &Dimensions<2>,
+    sampled_input: &Sampled<T, 2>,
 ) -> (Vec<Pattern>, FrequencyHints) {
     // BTreeSet return the patterns Ord sorted, making the vec conversion deterministic.
     let mut patterns: BTreeSet<Pattern> = BTreeSet::new();
     let mut pattern_frequencies: HashMap<Pattern, u32> = HashMap::new();
-    let max_width = input_width - pattern_width + 1;
-    let max_height = input_height - pattern_height + 1;
+    let max_width = sampled_input.dimensions().get(0) - pattern_dimensions.get(0) + 1;
+    let max_height = sampled_input.dimensions().get(1) - pattern_dimensions.get(1) + 1;
     for i in 0..max_height {
         for j in 0..max_width {
             let mut pattern_samples = Vec::new();
-            for y in 0..pattern_height {
-                for x in 0..pattern_width {
-                    let sample_idx = (j + x) + ((i + y) * input_width);
-                    pattern_samples.push(sampled_input[sample_idx as usize]);
+            for y in 0..pattern_dimensions.get(1) {
+                for x in 0..pattern_dimensions.get(0) {
+                    let sample_idx = (j + x) + ((i + y) * sampled_input.dimensions().get(0));
+                    pattern_samples.push(sampled_input.indices()[sample_idx as usize]);
                 }
             }
             let new_pattern = Pattern {
                 samples: pattern_samples,
-                width: pattern_width,
-                height: pattern_height,
+                width: pattern_dimensions.get(0),
+                height: pattern_dimensions.get(1),
             };
             let base_mirrored = new_pattern.rowwise_mirror();
             let pat_rot_90 = new_pattern.rotate(90.0);
@@ -170,16 +141,23 @@ fn print_adjadency_rule(adj_rules: &AdjadencyRules) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    const SAMPLE_VALUES: [u32; 9] = [0, 1, 2, 2, 0, 1, 1, 2, 0];
+
+    fn sample_3x3() -> Sampled<u32, 2> {
+        Sampled::from_fn(Dimensions::new([3, 3]), |i| SAMPLE_VALUES[i])
+            .expect("3x3 is a valid sample")
+    }
 
     #[test]
     fn pattern_order_is_deterministic() {
-        let sampled_input = vec![0, 1, 2, 2, 0, 1, 1, 2, 0];
-        let (test_patterns, test_frequencies) = find_patterns(2, 2, 3, 3, &sampled_input);
+        let pattern_dimensions = Dimensions::new([2, 2]);
+        let sampled_input = sample_3x3();
+        let (test_patterns, test_frequencies) = find_patterns(&pattern_dimensions, &sampled_input);
 
         assert!(test_patterns.len() > 1);
 
         for _ in 0..5 {
-            let (patterns, frequencies) = find_patterns(2, 2, 3, 3, &sampled_input);
+            let (patterns, frequencies) = find_patterns(&pattern_dimensions, &sampled_input);
 
             assert!(test_patterns == patterns);
             assert_eq!(test_frequencies, frequencies);
