@@ -31,10 +31,10 @@ impl<T: Eq, const N: usize> Sampled<T, N> {
                 return Err(SamplingError::InvalidDimensions);
             }
         };
-        let mut indices: Vec<u32> = vec![0; dimensions.total() as usize];
+        let mut indices: Vec<u32> = vec![0; dimensions.total()];
         let mut sample_palette: Vec<T> = vec![];
         for i in 0..dimensions.total() {
-            let sample = value_at(i as usize);
+            let sample = value_at(i);
             let k = match sample_palette.iter().position(|c| *c == sample) {
                 Some(i) => i,
                 None => {
@@ -42,7 +42,7 @@ impl<T: Eq, const N: usize> Sampled<T, N> {
                     sample_palette.len() - 1
                 }
             };
-            indices[i as usize] = k as u32;
+            indices[i] = k as u32;
         }
         Ok(Sampled {
             sample_palette,

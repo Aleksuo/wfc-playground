@@ -11,8 +11,8 @@ impl<const N: usize> Dimensions<N> {
         Ok(())
     }
 
-    pub fn total(&self) -> u32 {
-        self.0.into_iter().reduce(|a, b| a * b).unwrap_or_default()
+    pub fn total(&self) -> usize {
+        self.0.iter().map(|length| *length as usize).product()
     }
 
     pub fn get(&self, index: usize) -> u32 {
@@ -39,6 +39,14 @@ mod tests {
         fn multiplies_every_axis() {
             assert_eq!(Dimensions::new([4, 3]).total(), 12);
             assert_eq!(Dimensions::new([4, 3, 2]).total(), 24);
+        }
+
+        #[test]
+        #[cfg(target_pointer_width = "64")]
+        fn widens_before_multiplying() {
+            let dimensions = Dimensions::new([100_000, 100_000, 100_000]);
+
+            assert_eq!(dimensions.total(), 1_000_000_000_000_000);
         }
     }
 }
