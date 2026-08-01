@@ -2,7 +2,7 @@ use crate::model::direction::Direction;
 
 #[derive(Hash, PartialEq, Eq, Clone, PartialOrd, Ord)]
 pub struct Pattern {
-    pub samples: Vec<u16>,
+    pub samples: Vec<u32>,
     pub width: u32,
     pub height: u32,
 }
