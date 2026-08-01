@@ -1,4 +1,4 @@
-use image::{ImageBuffer, Rgb, RgbImage};
+use image::{ImageBuffer, Rgba, RgbaImage};
 
 use crate::model::pattern::Pattern;
 
@@ -7,10 +7,10 @@ pub fn reconstruct_image(
     grid_width: u32,
     grid_height: u32,
     patterns: &[Pattern],
-    palette: &[Rgb<u8>],
+    palette: &[Rgba<u8>],
     pattern_width: u32,
     pattern_height: u32,
-) -> RgbImage {
+) -> RgbaImage {
     let img_width = grid_width + pattern_width - 1;
     let img_height = grid_height + pattern_height - 1;
     let mut img = ImageBuffer::new(img_width, img_height);
