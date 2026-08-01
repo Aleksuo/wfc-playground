@@ -1,9 +1,10 @@
 use std::{num::NonZeroU32, process::ExitCode};
 
-use image::ImageReader;
+use image::{GenericImageView, ImageReader};
 
 use wfc::{
     core::{ContradictionStrategy, WfcModel, WfcRunConfig, solve},
+    model::{dimensions::Dimensions, sampled::Sampled},
     postprocessing::reconstruct_image,
     preprocessing::create_pattern_model,
 };
@@ -13,13 +14,25 @@ fn main() -> ExitCode {
         .expect("Unable to open input image")
         .decode()
         .expect("Unable to decode input image");
-    let result = create_pattern_model(input_img, 4, 4);
+
+    let (width, height) = input_img.dimensions();
+    let input_dims = Dimensions::new([width, height]);
+    let value_at = |idx| {
+        let x = idx as u32 % width;
+        let y = idx as u32 / width;
+        input_img.get_pixel(x, y)
+    };
+    let sampled = Sampled::from_fn(input_dims, value_at).expect("Sampling failed");
+
+    let pattern_dimensions = Dimensions::new([4, 4]);
+    let rule_model = create_pattern_model(&sampled, &pattern_dimensions);
+
     let grid_width = 64;
     let grid_height = 64;
     let model = WfcModel {
-        num_patterns: result.patterns.len(),
-        adj_rules: result.adjadency_rules,
-        frequency_hints: result.frequency_hints,
+        num_patterns: rule_model.patterns.len(),
+        adj_rules: rule_model.adjadency_rules,
+        frequency_hints: rule_model.frequency_hints,
     };
     let run_config = WfcRunConfig {
         output_width: grid_width,
@@ -34,16 +47,16 @@ fn main() -> ExitCode {
             &output,
             grid_width,
             grid_height,
-            &result.patterns,
-            &result.palette,
-            result.pattern_width,
-            result.pattern_height,
+            &rule_model.patterns,
+            sampled.palette(),
+            pattern_dimensions.get(0),
+            pattern_dimensions.get(1),
         );
         std::fs::create_dir_all(".output").expect("Unable to create output directory");
         img.save(".output/output.bmp")
             .expect("Unable to save output");
     } else {
-        return ExitCode::from(0);
+        return ExitCode::from(1);
     }
-    ExitCode::from(1)
+    ExitCode::from(0)
 }
