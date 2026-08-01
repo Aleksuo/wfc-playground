@@ -16,15 +16,15 @@ fn main() -> ExitCode {
         .expect("Unable to decode input image");
 
     let (width, height) = input_img.dimensions();
-    let input_dims = Dimensions::new([width, height]);
+    let input_dims = Dimensions::new([width, height]).expect("Input image is empty");
     let value_at = |idx| {
         let x = idx as u32 % width;
         let y = idx as u32 / width;
         input_img.get_pixel(x, y)
     };
-    let sampled = Sampled::from_fn(input_dims, value_at).expect("Sampling failed");
+    let sampled = Sampled::from_fn(input_dims, value_at);
 
-    let pattern_dimensions = Dimensions::new([4, 4]);
+    let pattern_dimensions = Dimensions::new([4, 4]).unwrap();
     let rule_model = create_pattern_model(&sampled, &pattern_dimensions);
 
     let grid_width = 64;

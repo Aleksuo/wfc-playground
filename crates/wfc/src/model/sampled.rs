@@ -1,4 +1,4 @@
-use crate::model::dimensions::{DimensionValidationError, Dimensions};
+use crate::model::dimensions::Dimensions;
 
 pub struct Sampled<T, const N: usize> {
     sample_palette: Vec<T>,
@@ -21,16 +21,7 @@ impl<T, const N: usize> Sampled<T, N> {
 }
 
 impl<T: Eq, const N: usize> Sampled<T, N> {
-    pub fn from_fn(
-        dimensions: Dimensions<N>,
-        mut value_at: impl FnMut(usize) -> T,
-    ) -> Result<Self, SamplingError> {
-        match dimensions.valid() {
-            Ok(_) => (),
-            Err(DimensionValidationError::EmptyDimension) => {
-                return Err(SamplingError::InvalidDimensions);
-            }
-        };
+    pub fn from_fn(dimensions: Dimensions<N>, mut value_at: impl FnMut(usize) -> T) -> Self {
         let mut indices: Vec<u32> = vec![0; dimensions.total()];
         let mut sample_palette: Vec<T> = vec![];
         for i in 0..dimensions.total() {
@@ -44,17 +35,12 @@ impl<T: Eq, const N: usize> Sampled<T, N> {
             };
             indices[i] = k as u32;
         }
-        Ok(Sampled {
+        Sampled {
             sample_palette,
             indices,
             dimensions,
-        })
+        }
     }
-}
-
-#[derive(Debug)]
-pub enum SamplingError {
-    InvalidDimensions,
 }
 
 #[cfg(test)]
@@ -67,8 +53,8 @@ mod tests {
         const SAMPLE_VALUES: [u32; 9] = [0, 1, 2, 2, 0, 1, 1, 2, 0];
 
         fn sample_3x3() -> Sampled<u32, 2> {
-            Sampled::from_fn(Dimensions::new([3, 3]), |i| SAMPLE_VALUES[i])
-                .expect("3x3 is a valid sample")
+            let dimensions = Dimensions::new([3, 3]).expect("3x3 is non-empty");
+            Sampled::from_fn(dimensions, |i| SAMPLE_VALUES[i])
         }
 
         #[test]
@@ -89,13 +75,6 @@ mod tests {
                 assert_eq!(first.palette(), repeat.palette());
                 assert_eq!(first.indices(), repeat.indices());
             }
-        }
-
-        #[test]
-        fn rejects_a_zero_length_dimension() {
-            let result = Sampled::from_fn(Dimensions::new([0, 3]), |i| SAMPLE_VALUES[i]);
-
-            assert!(matches!(result, Err(SamplingError::InvalidDimensions)));
         }
     }
 }

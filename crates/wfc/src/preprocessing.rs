@@ -144,13 +144,13 @@ mod tests {
     const SAMPLE_VALUES: [u32; 9] = [0, 1, 2, 2, 0, 1, 1, 2, 0];
 
     fn sample_3x3() -> Sampled<u32, 2> {
-        Sampled::from_fn(Dimensions::new([3, 3]), |i| SAMPLE_VALUES[i])
-            .expect("3x3 is a valid sample")
+        let dimensions = Dimensions::new([3, 3]).expect("3x3 is non-empty");
+        Sampled::from_fn(dimensions, |i| SAMPLE_VALUES[i])
     }
 
     #[test]
     fn pattern_order_is_deterministic() {
-        let pattern_dimensions = Dimensions::new([2, 2]);
+        let pattern_dimensions = Dimensions::new([2, 2]).expect("2x2 is non-empty");
         let sampled_input = sample_3x3();
         let (test_patterns, test_frequencies) = find_patterns(&pattern_dimensions, &sampled_input);
 
