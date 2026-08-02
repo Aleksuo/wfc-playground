@@ -56,8 +56,7 @@ fn run_attempt(
         num_patterns,
         num_directions,
     } = model;
-    let output_width = run_config.output_width;
-    let output_height = run_config.output_height;
+    let [output_width, output_height] = run_config.output_dimensions.get();
     let total_output = output_height * output_width;
     let mut rng = Xoshiro256PlusPlus::seed_from_u64(derived_seed);
     let mut state = WfcState {
@@ -182,6 +181,8 @@ mod tests {
     use std::num::NonZeroU32;
 
     mod wfc {
+        use crate::Dimensions;
+
         use super::*;
 
         fn checkerboard_rules() -> Vec<SimpleBitSet> {
@@ -222,8 +223,7 @@ mod tests {
                 num_directions: 4,
             };
             let run_config = SolverRunConfiguration {
-                output_width: width,
-                output_height: height,
+                output_dimensions: Dimensions::new([width, height]).unwrap(),
                 seed: run_seed,
                 contradiction_strategy: ContradictionStrategy::Fail,
             };
@@ -250,8 +250,7 @@ mod tests {
                 num_directions: 4,
             };
             let run_config = SolverRunConfiguration {
-                output_width: width,
-                output_height: height,
+                output_dimensions: Dimensions::new([width, height]).unwrap(),
                 seed: seed_1,
                 contradiction_strategy: ContradictionStrategy::Fail,
             };

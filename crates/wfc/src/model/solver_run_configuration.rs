@@ -1,5 +1,7 @@
 use std::num::NonZeroU32;
 
+use crate::Dimensions;
+
 pub enum ContradictionStrategy {
     Fail,
     Retry { max_attempts: NonZeroU32 },
@@ -15,8 +17,7 @@ pub enum SolverRunError {
 }
 
 pub struct SolverRunConfiguration {
-    pub output_width: u32,
-    pub output_height: u32,
+    pub output_dimensions: Dimensions<2>,
     pub seed: u64,
     pub contradiction_strategy: ContradictionStrategy,
 }

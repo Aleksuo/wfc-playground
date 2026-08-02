@@ -28,8 +28,7 @@ fn preprocess_creatures_image() -> CompiledModel {
 
 fn run_config(width: u32, height: u32) -> SolverRunConfiguration {
     SolverRunConfiguration {
-        output_width: width,
-        output_height: height,
+        output_dimensions: Dimensions::new([width, height]).unwrap(),
         seed: SEED,
         contradiction_strategy: ContradictionStrategy::Fail,
     }

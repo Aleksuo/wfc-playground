@@ -23,13 +23,14 @@ fn main() -> ExitCode {
 
     let grid_width = 64;
     let grid_height = 64;
+    let seed = 10;
+    let output_dimensions = Dimensions::new([grid_width, grid_height]).unwrap();
     let compiled_model = rule_model
         .compile()
         .expect("Derived rule model failed validation");
     let run_config = SolverRunConfiguration {
-        output_width: grid_width,
-        output_height: grid_height,
-        seed: 10,
+        output_dimensions,
+        seed,
         contradiction_strategy: ContradictionStrategy::Retry {
             max_attempts: NonZeroU32::new(5).unwrap(),
         },
@@ -41,8 +42,8 @@ fn main() -> ExitCode {
             grid_height,
             &rule_model.patterns,
             sampled.palette(),
-            pattern_dimensions.get(0),
-            pattern_dimensions.get(1),
+            pattern_dimensions.get_axis(0),
+            pattern_dimensions.get_axis(1),
         );
         std::fs::create_dir_all(".output").expect("Unable to create output directory");
         img.save(".output/output.bmp")

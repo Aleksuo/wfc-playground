@@ -43,19 +43,19 @@ fn find_patterns<T>(
         .dimensions()
         .windows(*pattern_dimensions)
         .ok_or(PatternError::PatternLargerThanInput)?;
-    for i in 0..windows.get(1) {
-        for j in 0..windows.get(0) {
+    for i in 0..windows.get_axis(1) {
+        for j in 0..windows.get_axis(0) {
             let mut pattern_samples = Vec::new();
-            for y in 0..pattern_dimensions.get(1) {
-                for x in 0..pattern_dimensions.get(0) {
+            for y in 0..pattern_dimensions.get_axis(1) {
+                for x in 0..pattern_dimensions.get_axis(0) {
                     let sample_idx = sampled_input.dimensions().index_of([j + x, i + y]);
                     pattern_samples.push(sampled_input.indices()[sample_idx]);
                 }
             }
             let new_pattern = Pattern {
                 samples: pattern_samples,
-                width: pattern_dimensions.get(0),
-                height: pattern_dimensions.get(1),
+                width: pattern_dimensions.get_axis(0),
+                height: pattern_dimensions.get_axis(1),
             };
             let base_mirrored = new_pattern.rowwise_mirror();
             let pat_rot_90 = new_pattern.rotate(90.0);

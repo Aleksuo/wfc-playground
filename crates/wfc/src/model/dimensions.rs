@@ -21,7 +21,17 @@ impl<const N: usize> Dimensions<N> {
         self.0.iter().map(|length| length.get() as usize).product()
     }
 
-    pub const fn get(&self, index: usize) -> u32 {
+    pub const fn get(&self) -> [u32; N] {
+        let mut lengths = [0u32; N];
+        let mut axis = 0;
+        while axis < N {
+            lengths[axis] = self.0[axis].get();
+            axis += 1;
+        }
+        lengths
+    }
+
+    pub const fn get_axis(&self, index: usize) -> u32 {
         self.0[index].get()
     }
 
@@ -33,7 +43,10 @@ impl<const N: usize> Dimensions<N> {
     pub fn windows(&self, window_dimensions: Dimensions<N>) -> Option<Self> {
         let mut spans = [0u32; N];
         for (axis, span) in spans.iter_mut().enumerate() {
-            *span = self.get(axis).checked_sub(window_dimensions.get(axis))? + 1;
+            *span = self
+                .get_axis(axis)
+                .checked_sub(window_dimensions.get_axis(axis))?
+                + 1;
         }
         Self::new(spans)
     }
@@ -54,7 +67,7 @@ impl<const N: usize> Dimensions<N> {
         let mut coord = [0u32; N];
         let mut k = index;
         for (i, coord_val) in coord.iter_mut().enumerate().rev() {
-            total /= self.get(i) as usize;
+            total /= self.get_axis(i) as usize;
             let j = k / total;
 
             k -= j * total;
@@ -74,13 +87,13 @@ impl<const N: usize> Dimensions<N> {
         let mut index = 0;
         for (i, val) in coordinate.iter().enumerate().rev() {
             assert!(
-                *val < self.get(i),
+                *val < self.get_axis(i),
                 "Coordinate axis {} value {} is out of range for an axis of length {}",
                 i,
                 *val,
-                self.get(i)
+                self.get_axis(i)
             );
-            total /= self.get(i) as usize;
+            total /= self.get_axis(i) as usize;
             index += *val as usize * total;
         }
         index

@@ -1,8 +1,8 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use wfc::{CompiledModel, ContradictionStrategy, FrequencyHints, SolverRunConfiguration, solve};
-// Internal rule-table layout, deliberately not part of the flat public API. This bench
-// hand-builds what WFC-31's builder will eventually produce.
 use wfc::model::{direction::ALL_DIRECTIONS, simple_bit_set::SimpleBitSet};
+use wfc::{
+    CompiledModel, ContradictionStrategy, Dimensions, FrequencyHints, SolverRunConfiguration, solve,
+};
 
 const SEED: u64 = 12;
 
@@ -19,8 +19,7 @@ fn preprocess_checkerboard() -> CompiledModel {
 
 fn run_config(width: u32, height: u32) -> SolverRunConfiguration {
     SolverRunConfiguration {
-        output_width: width,
-        output_height: height,
+        output_dimensions: Dimensions::new([width, height]).unwrap(),
         seed: SEED,
         contradiction_strategy: ContradictionStrategy::Fail,
     }
