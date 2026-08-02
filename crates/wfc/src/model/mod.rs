@@ -1,4 +1,5 @@
 pub mod cell;
+pub mod compiled_model;
 pub mod dimensions;
 pub mod direction;
 pub mod pattern;

@@ -1,12 +1,13 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use image::{GenericImageView, ImageReader};
-use wfc::core::{ContradictionStrategy, WfcModel, WfcRunConfig, solve};
+use wfc::core::{ContradictionStrategy, WfcRunConfig, solve};
+use wfc::model::compiled_model::CompiledModel;
 use wfc::model::{dimensions::Dimensions, sampled::Sampled};
 use wfc::preprocessing::create_pattern_model;
 
 const SEED: u64 = 10;
 
-fn preprocess_beach_image() -> WfcModel {
+fn preprocess_beach_image() -> CompiledModel {
     let image_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../input/beach.bmp");
     let input_img = ImageReader::open(image_path)
         .expect("Unable to load image")
@@ -19,7 +20,7 @@ fn preprocess_beach_image() -> WfcModel {
     let pattern_dimensions = Dimensions::new([4, 4]).expect("4x4 is non-empty");
     let pattern_model = create_pattern_model(&sampled, &pattern_dimensions)
         .expect("Pattern does not fit the input image");
-    WfcModel {
+    CompiledModel {
         num_patterns: pattern_model.patterns.len(),
         adj_rules: pattern_model.adjadency_rules,
         frequency_hints: pattern_model.frequency_hints,

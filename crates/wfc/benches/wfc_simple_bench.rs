@@ -1,15 +1,16 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use wfc::core::{ContradictionStrategy, WfcModel, WfcRunConfig, solve};
+use wfc::core::{ContradictionStrategy, WfcRunConfig, solve};
+use wfc::model::compiled_model::CompiledModel;
 use wfc::model::direction::ALL_DIRECTIONS;
 use wfc::model::rule_model::FrequencyHints;
 use wfc::model::simple_bit_set::SimpleBitSet;
 
 const SEED: u64 = 12;
 
-fn preprocess_checkerboard() -> WfcModel {
+fn preprocess_checkerboard() -> CompiledModel {
     let rules = checkerboard_rules();
     let freqs = FrequencyHints::new(checkerboard_frequencies());
-    WfcModel {
+    CompiledModel {
         adj_rules: rules,
         frequency_hints: freqs,
         num_patterns: 2,

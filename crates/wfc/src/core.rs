@@ -5,8 +5,9 @@ use crate::{
     core::ContradictionStrategy::{Fail, Retry},
     model::{
         cell::Cell,
+        compiled_model::CompiledModel,
         direction::{ALL_DIRECTIONS, Direction},
-        rule_model::{AdjadencyRules, FrequencyHints},
+        rule_model::FrequencyHints,
         simple_bit_set::SimpleBitSet,
         wfc_state::WfcState,
     },
@@ -27,12 +28,6 @@ enum WfcRunError {
     Contradiction,
 }
 
-pub struct WfcModel {
-    pub adj_rules: AdjadencyRules,
-    pub frequency_hints: FrequencyHints,
-    pub num_patterns: usize,
-}
-
 pub struct WfcRunConfig {
     pub output_width: u32,
     pub output_height: u32,
@@ -40,7 +35,7 @@ pub struct WfcRunConfig {
     pub contradiction_strategy: ContradictionStrategy,
 }
 
-pub fn solve(model: &WfcModel, run_config: &WfcRunConfig) -> Result<Vec<u16>, WfcError> {
+pub fn solve(model: &CompiledModel, run_config: &WfcRunConfig) -> Result<Vec<u16>, WfcError> {
     run_with_contradiction_strategy(
         run_config.seed,
         &run_config.contradiction_strategy,
@@ -69,11 +64,11 @@ fn run_with_contradiction_strategy(
 }
 
 fn run_attempt(
-    model: &WfcModel,
+    model: &CompiledModel,
     run_config: &WfcRunConfig,
     derived_seed: u64,
 ) -> Result<Vec<u16>, WfcRunError> {
-    let WfcModel {
+    let CompiledModel {
         adj_rules,
         frequency_hints,
         num_patterns,
@@ -238,7 +233,7 @@ mod tests {
             let height = 16;
 
             let num_checks = 5;
-            let model = WfcModel {
+            let model = CompiledModel {
                 num_patterns: test_freqs.weights.len(),
                 adj_rules: test_ruleset,
                 frequency_hints: test_freqs,
@@ -265,7 +260,7 @@ mod tests {
             let width = 16;
             let height = 16;
 
-            let model = WfcModel {
+            let model = CompiledModel {
                 num_patterns: test_freqs.weights.len(),
                 adj_rules: test_ruleset,
                 frequency_hints: test_freqs,
