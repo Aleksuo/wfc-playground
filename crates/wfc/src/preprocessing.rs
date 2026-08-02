@@ -38,8 +38,8 @@ fn find_patterns<T>(
             let mut pattern_samples = Vec::new();
             for y in 0..pattern_dimensions.get(1) {
                 for x in 0..pattern_dimensions.get(0) {
-                    let sample_idx = (j + x) + ((i + y) * sampled_input.dimensions().get(0));
-                    pattern_samples.push(sampled_input.indices()[sample_idx as usize]);
+                    let sample_idx = sampled_input.dimensions().index_of([j + x, i + y]);
+                    pattern_samples.push(sampled_input.indices()[sample_idx]);
                 }
             }
             let new_pattern = Pattern {
@@ -145,7 +145,19 @@ mod tests {
 
     fn sample_3x3() -> Sampled<u32, 2> {
         let dimensions = Dimensions::new([3, 3]).expect("3x3 is non-empty");
-        Sampled::from_fn(dimensions, |i| SAMPLE_VALUES[i])
+        Sampled::from_fn(dimensions, |coord| {
+            SAMPLE_VALUES[dimensions.index_of(coord)]
+        })
+    }
+
+    #[test]
+    fn extracts_a_pattern_that_fills_the_input() {
+        let pattern_dimensions = Dimensions::new([3, 3]).expect("3x3 is non-empty");
+        let sampled_input = sample_3x3();
+
+        let (patterns, _) = find_patterns(&pattern_dimensions, &sampled_input);
+
+        assert!(patterns.iter().any(|p| p.samples == SAMPLE_VALUES));
     }
 
     #[test]

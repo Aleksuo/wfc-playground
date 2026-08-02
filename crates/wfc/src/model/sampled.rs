@@ -21,12 +21,12 @@ impl<T, const N: usize> Sampled<T, N> {
 }
 
 impl<T: Eq, const N: usize> Sampled<T, N> {
-    pub fn from_fn(dimensions: Dimensions<N>, mut value_at: impl FnMut(usize) -> T) -> Self {
+    pub fn from_fn(dimensions: Dimensions<N>, mut value_at: impl FnMut([u32; N]) -> T) -> Self {
         let total = dimensions.total();
         let mut indices: Vec<u32> = Vec::with_capacity(total);
         let mut sample_palette: Vec<T> = vec![];
         for index in 0..total {
-            let sample = value_at(index);
+            let sample = value_at(dimensions.coord_of(index));
             let palette_index = match sample_palette.iter().position(|value| *value == sample) {
                 Some(existing) => existing,
                 None => {
@@ -55,7 +55,9 @@ mod tests {
 
         fn sample_3x3() -> Sampled<u32, 2> {
             let dimensions = Dimensions::new([3, 3]).expect("3x3 is non-empty");
-            Sampled::from_fn(dimensions, |i| SAMPLE_VALUES[i])
+            Sampled::from_fn(dimensions, |coord| {
+                SAMPLE_VALUES[dimensions.index_of(coord)]
+            })
         }
 
         #[test]
@@ -64,6 +66,19 @@ mod tests {
 
             assert_eq!(sampled.palette(), &[0, 1, 2]);
             assert_eq!(sampled.indices(), &SAMPLE_VALUES[..]);
+        }
+
+        #[test]
+        fn visits_coordinates_in_index_order() {
+            let dimensions = Dimensions::new([3, 2]).expect("3x2 is non-empty");
+            let mut visited = Vec::new();
+
+            Sampled::from_fn(dimensions, |coord| {
+                visited.push(coord);
+                0u32
+            });
+
+            assert_eq!(visited, [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1]]);
         }
 
         #[test]
