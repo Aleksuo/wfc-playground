@@ -17,7 +17,8 @@ fn preprocess_beach_image() -> WfcModel {
     let sampled = Sampled::from_fn(input_dimensions, |[x, y]| input_img.get_pixel(x, y));
 
     let pattern_dimensions = Dimensions::new([4, 4]).expect("4x4 is non-empty");
-    let pattern_model = create_pattern_model(&sampled, &pattern_dimensions);
+    let pattern_model = create_pattern_model(&sampled, &pattern_dimensions)
+        .expect("Pattern does not fit the input image");
     WfcModel {
         num_patterns: pattern_model.patterns.len(),
         adj_rules: pattern_model.adjadency_rules,

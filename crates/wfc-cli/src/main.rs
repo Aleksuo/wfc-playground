@@ -20,7 +20,8 @@ fn main() -> ExitCode {
     let sampled = Sampled::from_fn(input_dims, |[x, y]| input_img.get_pixel(x, y));
 
     let pattern_dimensions = Dimensions::new([4, 4]).unwrap();
-    let rule_model = create_pattern_model(&sampled, &pattern_dimensions);
+    let rule_model = create_pattern_model(&sampled, &pattern_dimensions)
+        .expect("Pattern does not fit the input image");
 
     let grid_width = 64;
     let grid_height = 64;

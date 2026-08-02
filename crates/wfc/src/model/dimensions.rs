@@ -1,6 +1,6 @@
 use std::num::NonZeroU32;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Dimensions<const N: usize>([NonZeroU32; N]);
 
 impl<const N: usize> Dimensions<N> {
@@ -23,6 +23,19 @@ impl<const N: usize> Dimensions<N> {
 
     pub const fn get(&self, index: usize) -> u32 {
         self.0[index].get()
+    }
+
+    /// The extent of the grid of positions at which a `window_dimensions` sized window fits inside
+    /// this space, i.e. one more than the difference along each axis.
+    ///
+    /// Returns `None` if `pattern` is longer than this space on any axis, which is the
+    /// one way a caller can ask for a window that does not exist.
+    pub fn windows(&self, window_dimensions: Dimensions<N>) -> Option<Self> {
+        let mut spans = [0u32; N];
+        for (axis, span) in spans.iter_mut().enumerate() {
+            *span = self.get(axis).checked_sub(window_dimensions.get(axis))? + 1;
+        }
+        Self::new(spans)
     }
 
     /// Converts an index into a coordinate in the N dimensional space.
@@ -109,6 +122,68 @@ mod tests {
             let dimensions = Dimensions::new([100_000, 100_000, 100_000]).unwrap();
 
             assert_eq!(dimensions.total(), 1_000_000_000_000_000);
+        }
+    }
+
+    mod windows {
+        use super::*;
+
+        #[test]
+        fn counts_positions_along_every_axis() {
+            let dimensions = Dimensions::new([8, 5]).unwrap();
+
+            let windows = dimensions
+                .windows(Dimensions::new([3, 2]).unwrap())
+                .unwrap();
+
+            assert_eq!(windows, Dimensions::new([6, 4]).unwrap());
+        }
+
+        #[test]
+        fn accepts_a_pattern_that_fills_the_space() {
+            let dimensions = Dimensions::new([3, 3]).unwrap();
+
+            let windows = dimensions.windows(dimensions).unwrap();
+
+            assert_eq!(windows, Dimensions::new([1, 1]).unwrap());
+        }
+
+        #[test]
+        fn rejects_a_pattern_longer_on_any_single_axis() {
+            let dimensions = Dimensions::new([8, 8]).unwrap();
+
+            assert!(
+                dimensions
+                    .windows(Dimensions::new([9, 3]).unwrap())
+                    .is_none()
+            );
+            assert!(
+                dimensions
+                    .windows(Dimensions::new([3, 9]).unwrap())
+                    .is_none()
+            );
+        }
+
+        #[test]
+        fn rejects_a_pattern_one_longer_than_the_space() {
+            let dimensions = Dimensions::new([3, 3]).unwrap();
+
+            assert!(
+                dimensions
+                    .windows(Dimensions::new([4, 4]).unwrap())
+                    .is_none()
+            );
+        }
+
+        #[test]
+        fn counts_positions_in_three_dimensions() {
+            let dimensions = Dimensions::new([4, 3, 2]).unwrap();
+
+            let windows = dimensions
+                .windows(Dimensions::new([2, 2, 2]).unwrap())
+                .unwrap();
+
+            assert_eq!(windows, Dimensions::new([3, 2, 1]).unwrap());
         }
     }
 
