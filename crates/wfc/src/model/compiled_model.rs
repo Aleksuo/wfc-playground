@@ -7,3 +7,13 @@ pub struct CompiledModel {
     pub num_patterns: usize,
     pub num_directions: usize,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    const fn assert_send_sync<T: Send + Sync>() {}
+    #[test]
+    fn is_send_and_sync() {
+        assert_send_sync::<CompiledModel>();
+    }
+}
