@@ -1,6 +1,7 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use image::ImageReader;
+use image::{GenericImageView, ImageReader};
 use wfc::core::{ContradictionStrategy, WfcModel, WfcRunConfig, solve};
+use wfc::model::{dimensions::Dimensions, sampled::Sampled};
 use wfc::preprocessing::create_pattern_model;
 
 const SEED: u64 = 10;
@@ -11,7 +12,12 @@ fn preprocess_beach_image() -> WfcModel {
         .expect("Unable to load image")
         .decode()
         .expect("Unable to decode image");
-    let pattern_model = create_pattern_model(input_img, 4, 4);
+    let (width, height) = input_img.dimensions();
+    let input_dimensions = Dimensions::new([width, height]).expect("Input image is empty");
+    let sampled = Sampled::from_fn(input_dimensions, |[x, y]| input_img.get_pixel(x, y));
+
+    let pattern_dimensions = Dimensions::new([4, 4]).expect("4x4 is non-empty");
+    let pattern_model = create_pattern_model(&sampled, &pattern_dimensions);
     WfcModel {
         num_patterns: pattern_model.patterns.len(),
         adj_rules: pattern_model.adjadency_rules,
