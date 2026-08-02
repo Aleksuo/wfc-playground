@@ -1,7 +1,7 @@
 use crate::model::{pattern::Pattern, simple_bit_set::SimpleBitSet};
 
 pub type AdjadencyRules = Vec<SimpleBitSet>;
-pub struct PatternModel {
+pub struct RuleModel {
     pub patterns: Vec<Pattern>,
     pub adjadency_rules: AdjadencyRules,
     pub frequency_hints: FrequencyHints,

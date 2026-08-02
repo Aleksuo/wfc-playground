@@ -1,7 +1,7 @@
 use rand::{Rng, RngExt};
 
 use crate::{
-    model::{pattern_model::FrequencyHints, simple_bit_set::SimpleBitSet},
+    model::{rule_model::FrequencyHints, simple_bit_set::SimpleBitSet},
     util::entropy::calculate_shannon_entropy,
 };
 

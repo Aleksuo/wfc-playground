@@ -6,7 +6,7 @@ use crate::{
     model::{
         cell::Cell,
         direction::{ALL_DIRECTIONS, Direction},
-        pattern_model::{AdjadencyRules, FrequencyHints},
+        rule_model::{AdjadencyRules, FrequencyHints},
         simple_bit_set::SimpleBitSet,
         wfc_state::WfcState,
     },

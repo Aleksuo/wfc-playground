@@ -1,7 +1,7 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use wfc::core::{ContradictionStrategy, WfcModel, WfcRunConfig, solve};
 use wfc::model::direction::ALL_DIRECTIONS;
-use wfc::model::pattern_model::FrequencyHints;
+use wfc::model::rule_model::FrequencyHints;
 use wfc::model::simple_bit_set::SimpleBitSet;
 
 const SEED: u64 = 12;

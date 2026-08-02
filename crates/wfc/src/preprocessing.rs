@@ -4,7 +4,7 @@ use crate::model::{
     dimensions::Dimensions,
     direction::ALL_DIRECTIONS,
     pattern::Pattern,
-    pattern_model::{AdjadencyRules, FrequencyHints, PatternModel},
+    rule_model::{AdjadencyRules, FrequencyHints, RuleModel},
     sampled::Sampled,
     simple_bit_set::SimpleBitSet,
 };
@@ -19,12 +19,12 @@ pub enum PatternError {
 pub fn create_pattern_model<T>(
     input: &Sampled<T, 2>,
     pattern_dimensions: &Dimensions<2>,
-) -> Result<PatternModel, PatternError> {
+) -> Result<RuleModel, PatternError> {
     let (patterns, frequency_hints) = find_patterns(pattern_dimensions, input)?;
     // print_patterns(&patterns, &frequency_hints);
     let adjadency_rules = recognize_adjadency_rules(&patterns);
     // print_adjadency_rule(&adjadency_rules);
-    Ok(PatternModel {
+    Ok(RuleModel {
         patterns,
         adjadency_rules,
         frequency_hints,

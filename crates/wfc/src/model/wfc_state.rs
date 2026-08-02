@@ -1,4 +1,4 @@
-use crate::model::{cell::Cell, pattern_model::AdjadencyRules};
+use crate::model::{cell::Cell, rule_model::AdjadencyRules};
 
 pub struct WfcState {
     pub cells: Vec<Cell>,
