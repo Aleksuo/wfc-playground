@@ -1,9 +1,10 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use wfc::core::{ContradictionStrategy, WfcRunConfig, solve};
+use wfc::core::solve;
 use wfc::model::compiled_model::CompiledModel;
 use wfc::model::direction::ALL_DIRECTIONS;
 use wfc::model::rule_model::FrequencyHints;
 use wfc::model::simple_bit_set::SimpleBitSet;
+use wfc::model::solver_run_configuration::{ContradictionStrategy, SolverRunConfiguration};
 
 const SEED: u64 = 12;
 
@@ -17,8 +18,8 @@ fn preprocess_checkerboard() -> CompiledModel {
     }
 }
 
-fn run_config(width: u32, height: u32) -> WfcRunConfig {
-    WfcRunConfig {
+fn run_config(width: u32, height: u32) -> SolverRunConfiguration {
+    SolverRunConfiguration {
         output_width: width,
         output_height: height,
         seed: SEED,

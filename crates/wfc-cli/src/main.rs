@@ -3,8 +3,13 @@ use std::{num::NonZeroU32, process::ExitCode};
 use image::{GenericImageView, ImageReader};
 
 use wfc::{
-    core::{ContradictionStrategy, WfcRunConfig, solve},
-    model::{compiled_model::CompiledModel, dimensions::Dimensions, sampled::Sampled},
+    core::solve,
+    model::{
+        compiled_model::CompiledModel,
+        dimensions::Dimensions,
+        sampled::Sampled,
+        solver_run_configuration::{ContradictionStrategy, SolverRunConfiguration},
+    },
     postprocessing::reconstruct_image,
     preprocessing::create_pattern_model,
 };
@@ -30,7 +35,7 @@ fn main() -> ExitCode {
         adj_rules: rule_model.adjadency_rules,
         frequency_hints: rule_model.frequency_hints,
     };
-    let run_config = WfcRunConfig {
+    let run_config = SolverRunConfiguration {
         output_width: grid_width,
         output_height: grid_height,
         seed: 10,

@@ -6,4 +6,5 @@ pub mod pattern;
 pub mod rule_model;
 pub mod sampled;
 pub mod simple_bit_set;
+pub mod solver_run_configuration;
 pub mod wfc_state;

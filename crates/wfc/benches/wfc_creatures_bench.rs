@@ -1,7 +1,8 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use image::{GenericImageView, ImageReader};
-use wfc::core::{ContradictionStrategy, WfcRunConfig, solve};
+use wfc::core::solve;
 use wfc::model::compiled_model::CompiledModel;
+use wfc::model::solver_run_configuration::{ContradictionStrategy, SolverRunConfiguration};
 use wfc::model::{dimensions::Dimensions, sampled::Sampled};
 use wfc::preprocessing::create_pattern_model;
 
@@ -28,8 +29,8 @@ fn preprocess_creatures_image() -> CompiledModel {
     }
 }
 
-fn run_config(width: u32, height: u32) -> WfcRunConfig {
-    WfcRunConfig {
+fn run_config(width: u32, height: u32) -> SolverRunConfiguration {
+    SolverRunConfiguration {
         output_width: width,
         output_height: height,
         seed: SEED,
