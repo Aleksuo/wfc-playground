@@ -20,11 +20,9 @@ fn preprocess_beach_image() -> CompiledModel {
     let pattern_dimensions = Dimensions::new([4, 4]).expect("4x4 is non-empty");
     let pattern_model = create_pattern_model(&sampled, &pattern_dimensions)
         .expect("Pattern does not fit the input image");
-    CompiledModel {
-        num_patterns: pattern_model.patterns.len(),
-        adj_rules: pattern_model.adjadency_rules,
-        frequency_hints: pattern_model.frequency_hints,
-    }
+    pattern_model
+        .compile()
+        .expect("Derived rule model failed validation")
 }
 
 fn run_config(width: u32, height: u32) -> SolverRunConfiguration {

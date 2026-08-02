@@ -1,7 +1,5 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use wfc::{
-    CompiledModel, ContradictionStrategy, FrequencyHints, SolverRunConfiguration, solve,
-};
+use wfc::{CompiledModel, ContradictionStrategy, FrequencyHints, SolverRunConfiguration, solve};
 // Internal rule-table layout, deliberately not part of the flat public API. This bench
 // hand-builds what WFC-31's builder will eventually produce.
 use wfc::model::{direction::ALL_DIRECTIONS, simple_bit_set::SimpleBitSet};
@@ -15,6 +13,7 @@ fn preprocess_checkerboard() -> CompiledModel {
         adj_rules: rules,
         frequency_hints: freqs,
         num_patterns: 2,
+        num_directions: 4,
     }
 }
 

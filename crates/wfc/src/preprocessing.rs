@@ -28,6 +28,7 @@ pub fn create_pattern_model<T>(
         patterns,
         adjadency_rules,
         frequency_hints,
+        num_directions: ALL_DIRECTIONS.len(),
     })
 }
 

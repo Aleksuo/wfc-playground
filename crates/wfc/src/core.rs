@@ -54,6 +54,7 @@ fn run_attempt(
         adj_rules,
         frequency_hints,
         num_patterns,
+        num_directions,
     } = model;
     let output_width = run_config.output_width;
     let output_height = run_config.output_height;
@@ -102,7 +103,6 @@ fn run_attempt(
             union_map.iter_mut().for_each(|f| f.clear_all());
 
             // Construct union map of all possible values in each direction for the cell
-            let num_directions = ALL_DIRECTIONS.len();
             for possible in next_cell.possible_values.into_iter() {
                 for direction in ALL_DIRECTIONS {
                     let dir_set = &mut union_map[direction as usize];
@@ -220,6 +220,7 @@ mod tests {
                 num_patterns: test_freqs.weights.len(),
                 adj_rules: test_ruleset,
                 frequency_hints: test_freqs,
+                num_directions: 4,
             };
             let run_config = SolverRunConfiguration {
                 output_width: width,
@@ -247,6 +248,7 @@ mod tests {
                 num_patterns: test_freqs.weights.len(),
                 adj_rules: test_ruleset,
                 frequency_hints: test_freqs,
+                num_directions: 4,
             };
             let run_config = SolverRunConfiguration {
                 output_width: width,
