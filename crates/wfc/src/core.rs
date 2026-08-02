@@ -63,7 +63,6 @@ fn run_attempt(
     let mut state = WfcState {
         cells: Vec::new(),
         uncollapsed_num: total_output,
-        adjadency_rules: adj_rules.clone(),
     };
     let initial_possible_values = SimpleBitSet::full(*num_patterns);
     let initial_entropy = calculate_initial_entropy(frequency_hints);
@@ -107,7 +106,7 @@ fn run_attempt(
                 for direction in ALL_DIRECTIONS {
                     let dir_set = &mut union_map[direction as usize];
                     let rule_idx = possible * num_directions + direction as usize;
-                    dir_set.union_with(&state.adjadency_rules[rule_idx]);
+                    dir_set.union_with(&adj_rules[rule_idx]);
                 }
             }
             // Iterate neigbors and intersect with the union set
