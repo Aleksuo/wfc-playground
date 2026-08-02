@@ -1,10 +1,10 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use wfc::core::solve;
-use wfc::model::compiled_model::CompiledModel;
-use wfc::model::direction::ALL_DIRECTIONS;
-use wfc::model::rule_model::FrequencyHints;
-use wfc::model::simple_bit_set::SimpleBitSet;
-use wfc::model::solver_run_configuration::{ContradictionStrategy, SolverRunConfiguration};
+use wfc::{
+    CompiledModel, ContradictionStrategy, FrequencyHints, SolverRunConfiguration, solve,
+};
+// Internal rule-table layout, deliberately not part of the flat public API. This bench
+// hand-builds what WFC-31's builder will eventually produce.
+use wfc::model::{direction::ALL_DIRECTIONS, simple_bit_set::SimpleBitSet};
 
 const SEED: u64 = 12;
 

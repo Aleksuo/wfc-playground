@@ -3,15 +3,8 @@ use std::{num::NonZeroU32, process::ExitCode};
 use image::{GenericImageView, ImageReader};
 
 use wfc::{
-    core::solve,
-    model::{
-        compiled_model::CompiledModel,
-        dimensions::Dimensions,
-        sampled::Sampled,
-        solver_run_configuration::{ContradictionStrategy, SolverRunConfiguration},
-    },
-    postprocessing::reconstruct_image,
-    preprocessing::create_pattern_model,
+    CompiledModel, ContradictionStrategy, Dimensions, Sampled, SolverRunConfiguration,
+    create_pattern_model, reconstruct_image, solve,
 };
 
 fn main() -> ExitCode {

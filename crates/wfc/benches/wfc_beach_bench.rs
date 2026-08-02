@@ -1,10 +1,9 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use image::{GenericImageView, ImageReader};
-use wfc::core::solve;
-use wfc::model::compiled_model::CompiledModel;
-use wfc::model::solver_run_configuration::{ContradictionStrategy, SolverRunConfiguration};
-use wfc::model::{dimensions::Dimensions, sampled::Sampled};
-use wfc::preprocessing::create_pattern_model;
+use wfc::{
+    CompiledModel, ContradictionStrategy, Dimensions, Sampled, SolverRunConfiguration,
+    create_pattern_model, solve,
+};
 
 const SEED: u64 = 10;
 
