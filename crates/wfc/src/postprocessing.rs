@@ -3,7 +3,7 @@ use image::{ImageBuffer, Rgba, RgbaImage};
 use crate::model::pattern::Pattern;
 
 pub fn reconstruct_image(
-    output: &[u16],
+    output: &[u32],
     grid_width: u32,
     grid_height: u32,
     patterns: &[Pattern],

@@ -11,6 +11,7 @@ pub use crate::model::{
     pattern::Pattern,
     rule_model::{AdjadencyRules, FrequencyHints, RuleModel},
     sampled::Sampled,
+    solution::Solution,
     solver_run_configuration::{ContradictionStrategy, SolverError, SolverRunConfiguration},
 };
 pub use crate::postprocessing::reconstruct_image;

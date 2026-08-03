@@ -7,7 +7,7 @@ use crate::{
 
 pub struct Cell {
     pub possible_values: SimpleBitSet,
-    pub collapsed_val: Option<u16>,
+    pub collapsed_val: Option<u32>,
     pub entropy: f32,
     pub is_collapsed: bool,
     pub tie_breaker_noise: f32,
@@ -59,7 +59,7 @@ impl Cell {
         }
         self.possible_values.clear_all();
         self.possible_values.set(chosen);
-        self.collapsed_val = Some(chosen as u16);
+        self.collapsed_val = Some(chosen as u32);
         self.is_collapsed = true;
     }
 }

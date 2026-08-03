@@ -6,7 +6,7 @@ pub struct WfcState {
 }
 
 impl WfcState {
-    pub fn get_sampled_output(self) -> Vec<u16> {
+    pub fn get_sampled_output(self) -> Vec<u32> {
         self.cells
             .iter()
             .map(|cell| cell.collapsed_val.unwrap())

@@ -2,6 +2,7 @@ use rand::{prelude::*, rngs::Xoshiro256PlusPlus};
 use std::collections::VecDeque;
 
 use crate::{
+    Solution,
     model::{
         cell::Cell,
         compiled_model::CompiledModel,
@@ -17,7 +18,7 @@ use crate::{
 pub fn solve(
     model: &CompiledModel,
     run_config: &SolverRunConfiguration,
-) -> Result<Vec<u16>, SolverError> {
+) -> Result<Solution, SolverError> {
     run_with_contradiction_strategy(
         run_config.seed,
         &run_config.contradiction_strategy,
@@ -28,8 +29,8 @@ pub fn solve(
 fn run_with_contradiction_strategy(
     run_seed: u64,
     contradiction_strategy: &ContradictionStrategy,
-    mut run_attempt: impl FnMut(u64) -> Result<Vec<u16>, SolverRunError>,
-) -> Result<Vec<u16>, SolverError> {
+    mut run_attempt: impl FnMut(u64) -> Result<Solution, SolverRunError>,
+) -> Result<Solution, SolverError> {
     let max_attempts = match contradiction_strategy {
         ContradictionStrategy::Fail => 1,
         ContradictionStrategy::Retry { max_attempts } => max_attempts.get(),
@@ -49,7 +50,7 @@ fn run_attempt(
     model: &CompiledModel,
     run_config: &SolverRunConfiguration,
     derived_seed: u64,
-) -> Result<Vec<u16>, SolverRunError> {
+) -> Result<Solution, SolverRunError> {
     let CompiledModel {
         adj_rules,
         frequency_hints,
@@ -146,7 +147,10 @@ fn run_attempt(
             }
         }
     }
-    Ok(state.get_sampled_output())
+    Ok(Solution {
+        output: state.get_sampled_output(),
+        output_dimensions: run_config.output_dimensions,
+    })
 }
 
 fn calculate_initial_entropy(frequency_hints: &FrequencyHints) -> f32 {
@@ -201,6 +205,13 @@ mod tests {
                 }
             }
             rules
+        }
+
+        fn stub_solution() -> Solution {
+            Solution {
+                output: vec![42],
+                output_dimensions: Dimensions::new([1, 1]).expect("1x1 is non-empty"),
+            }
         }
 
         fn checkerboard_frequencies() -> Vec<u32> {
@@ -292,13 +303,13 @@ mod tests {
             let result = run_with_contradiction_strategy(u64::MAX - 1, &strategy, |seed| {
                 attempted_seeds.push(seed);
                 if attempted_seeds.len() == 3 {
-                    Ok(vec![42])
+                    Ok(stub_solution())
                 } else {
                     Err(SolverRunError::Contradiction)
                 }
             });
 
-            assert_eq!(result.unwrap(), vec![42]);
+            assert_eq!(result.unwrap(), stub_solution());
             assert_eq!(attempted_seeds, vec![u64::MAX - 1, u64::MAX, 0]);
         }
 

@@ -1,7 +1,7 @@
 use std::fmt;
 
 use crate::{
-    CompiledModel,
+    CompiledModel, Dimensions,
     model::{direction::ALL_DIRECTIONS, pattern::Pattern, simple_bit_set::SimpleBitSet},
 };
 
@@ -11,6 +11,7 @@ pub struct RuleModel {
     pub adjadency_rules: AdjadencyRules,
     pub frequency_hints: FrequencyHints,
     pub num_directions: usize,
+    pub pattern_dimensions: Dimensions<2>,
 }
 
 impl RuleModel {
@@ -235,6 +236,7 @@ mod tests {
                 adjadency_rules,
                 frequency_hints: FrequencyHints::new(vec![1, 1]),
                 num_directions,
+                pattern_dimensions: Dimensions::new([1, 1]).expect("1x1 is non-empty"),
             }
         }
 

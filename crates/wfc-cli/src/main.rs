@@ -35,9 +35,9 @@ fn main() -> ExitCode {
             max_attempts: NonZeroU32::new(5).unwrap(),
         },
     };
-    if let Ok(output) = solve(&compiled_model, &run_config) {
+    if let Ok(solution) = solve(&compiled_model, &run_config) {
         let img = reconstruct_image(
-            &output,
+            &solution.output,
             grid_width,
             grid_height,
             &rule_model.patterns,
