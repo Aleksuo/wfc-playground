@@ -1,6 +1,6 @@
 use std::num::NonZeroU32;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Dimensions<const N: usize>([NonZeroU32; N]);
 
 impl<const N: usize> Dimensions<N> {
