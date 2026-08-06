@@ -72,7 +72,7 @@ impl Pattern {
             }
         }
         Pattern {
-            dimensions: self.dimensions.clone(),
+            dimensions: self.dimensions,
             samples: res_vec,
         }
     }
@@ -115,7 +115,7 @@ impl Pattern {
         }
         Pattern {
             samples: rotated_samples,
-            dimensions: self.dimensions.clone(),
+            dimensions: self.dimensions,
         }
     }
 }

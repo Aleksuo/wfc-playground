@@ -1,10 +1,9 @@
 use std::{num::NonZeroU32, process::ExitCode};
 
-use image::{GenericImageView, ImageReader};
+use image::{GenericImageView, ImageReader, RgbaImage};
 
 use wfc::{
-    ContradictionStrategy, Dimensions, Sampled, SolverRunConfiguration, create_pattern_model,
-    reconstruct_image, solve,
+    ContradictionStrategy, Dimensions, Sampled, SolverRunConfiguration, create_pattern_model, solve,
 };
 
 fn main() -> ExitCode {
@@ -36,15 +35,11 @@ fn main() -> ExitCode {
         },
     };
     if let Ok(solution) = solve(&compiled_model, &run_config) {
-        let img = reconstruct_image(
-            &solution.output,
-            grid_width,
-            grid_height,
-            &rule_model.patterns,
-            sampled.palette(),
-            pattern_dimensions.get_axis(0),
-            pattern_dimensions.get_axis(1),
-        );
+        let decoded = sampled.decode(&solution, &rule_model);
+        let [output_width, output_height] = decoded.dimensions().get();
+        let img = RgbaImage::from_fn(output_width, output_height, |x, y| {
+            *decoded.value_at([x, y])
+        });
         std::fs::create_dir_all(".output").expect("Unable to create output directory");
         img.save(".output/output.bmp")
             .expect("Unable to save output");

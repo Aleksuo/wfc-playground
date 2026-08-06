@@ -1,6 +1,5 @@
 pub mod core;
 pub mod model;
-pub mod postprocessing;
 pub mod preprocessing;
 mod util;
 
@@ -14,5 +13,4 @@ pub use crate::model::{
     solution::Solution,
     solver_run_configuration::{ContradictionStrategy, SolverError, SolverRunConfiguration},
 };
-pub use crate::postprocessing::reconstruct_image;
 pub use crate::preprocessing::{PatternError, create_pattern_model};

@@ -55,8 +55,7 @@ fn find_patterns<T>(
             }
             let new_pattern = Pattern {
                 samples: pattern_samples,
-                width: pattern_dimensions.get_axis(0),
-                height: pattern_dimensions.get_axis(1),
+                dimensions: *pattern_dimensions,
             };
             let base_mirrored = new_pattern.rowwise_mirror();
             let pat_rot_90 = new_pattern.rotate(90.0);
@@ -118,10 +117,11 @@ fn print_patterns(patterns: &[Pattern], frequencies: &FrequencyHints) {
     for (i, pattern) in patterns.iter().enumerate() {
         let freq = frequencies.weights.get(i).unwrap_or(&0);
         println!("  Pattern {} (freq: {}):", i, freq);
-        for y in 0..pattern.height {
+        let [width, height] = pattern.dimensions.get();
+        for y in 0..height {
             print!("    ");
-            for x in 0..pattern.width {
-                let idx = (x + y * pattern.width) as usize;
+            for x in 0..width {
+                let idx = (x + y * width) as usize;
                 print!("{:2} ", pattern.samples[idx]);
             }
             println!();
