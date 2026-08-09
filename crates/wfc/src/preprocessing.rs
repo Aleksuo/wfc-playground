@@ -5,7 +5,7 @@ use crate::model::{
     direction::ALL_DIRECTIONS,
     pattern::Pattern,
     rule_model::{AdjadencyRules, FrequencyHints, RuleModel},
-    sampled::SampleLattice,
+    sample_lattice::SampleLattice,
     simple_bit_set::SimpleBitSet,
 };
 
