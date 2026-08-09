@@ -30,12 +30,11 @@ impl RuleModel {
             return Err(RuleModelValidationErrors::new(content));
         }
 
-        Ok(CompiledModel {
-            adj_rules: self.adjadency_rules.clone(),
-            frequency_hints: self.frequency_hints.clone(),
-            num_patterns: self.num_patterns(),
-            num_directions: self.num_directions,
-        })
+        Ok(CompiledModel::new(
+            self.adjadency_rules.clone(),
+            self.frequency_hints.clone(),
+            self.num_directions,
+        ))
     }
 
     fn validate_shape(&self) -> Vec<RuleModelValidationError> {
@@ -259,8 +258,8 @@ mod tests {
         fn compiles_a_valid_model() {
             let compiled = valid_model().compile().expect("the model is valid");
 
-            assert_eq!(compiled.num_patterns, 2);
-            assert_eq!(compiled.num_directions, ALL_DIRECTIONS.len());
+            assert_eq!(compiled.num_patterns(), 2);
+            assert_eq!(compiled.num_directions(), ALL_DIRECTIONS.len());
         }
 
         #[test]

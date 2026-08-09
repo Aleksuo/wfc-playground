@@ -51,12 +51,10 @@ fn run_attempt(
     run_config: &SolverRunConfiguration,
     derived_seed: u64,
 ) -> Result<Solution, SolverRunError> {
-    let CompiledModel {
-        adj_rules,
-        frequency_hints,
-        num_patterns,
-        num_directions,
-    } = model;
+    let adj_rules = model.adj_rules();
+    let frequency_hints = model.frequency_hints();
+    let num_patterns = model.num_patterns();
+    let num_directions = model.num_directions();
     let [output_width, output_height] = run_config.output_dimensions.get();
     let total_output = output_height * output_width;
     let mut rng = Xoshiro256PlusPlus::seed_from_u64(derived_seed);
@@ -64,7 +62,7 @@ fn run_attempt(
         cells: Vec::new(),
         uncollapsed_num: total_output,
     };
-    let initial_possible_values = SimpleBitSet::full(*num_patterns);
+    let initial_possible_values = SimpleBitSet::full(num_patterns);
     let initial_entropy = calculate_initial_entropy(frequency_hints);
     for _ in 0..(total_output) {
         state.cells.push(Cell::new(
@@ -75,10 +73,10 @@ fn run_attempt(
     }
 
     let mut union_map: [SimpleBitSet; 4] = [
-        SimpleBitSet::new(*num_patterns),
-        SimpleBitSet::new(*num_patterns),
-        SimpleBitSet::new(*num_patterns),
-        SimpleBitSet::new(*num_patterns),
+        SimpleBitSet::new(num_patterns),
+        SimpleBitSet::new(num_patterns),
+        SimpleBitSet::new(num_patterns),
+        SimpleBitSet::new(num_patterns),
     ];
 
     let mut propagation_queue: VecDeque<usize> = VecDeque::new();
@@ -226,12 +224,7 @@ mod tests {
             let height = 16;
 
             let num_checks = 5;
-            let model = CompiledModel {
-                num_patterns: test_freqs.weights.len(),
-                adj_rules: test_ruleset,
-                frequency_hints: test_freqs,
-                num_directions: 4,
-            };
+            let model = CompiledModel::new(test_ruleset, test_freqs, 4);
             let run_config = SolverRunConfiguration {
                 output_dimensions: Dimensions::new([width, height]).unwrap(),
                 seed: run_seed,
@@ -252,13 +245,7 @@ mod tests {
             let seed_2: u64 = 10;
             let width = 16;
             let height = 16;
-
-            let model = CompiledModel {
-                num_patterns: test_freqs.weights.len(),
-                adj_rules: test_ruleset,
-                frequency_hints: test_freqs,
-                num_directions: 4,
-            };
+            let model = CompiledModel::new(test_ruleset, test_freqs, 4);
             let run_config = SolverRunConfiguration {
                 output_dimensions: Dimensions::new([width, height]).unwrap(),
                 seed: seed_1,

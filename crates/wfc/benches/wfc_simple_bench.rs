@@ -1,20 +1,32 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use wfc::model::{direction::ALL_DIRECTIONS, simple_bit_set::SimpleBitSet};
 use wfc::{
-    CompiledModel, ContradictionStrategy, Dimensions, FrequencyHints, SolverRunConfiguration, solve,
+    CompiledModel, ContradictionStrategy, Dimensions, FrequencyHints, Pattern, RuleModel,
+    SolverRunConfiguration, solve,
 };
 
 const SEED: u64 = 12;
 
 fn preprocess_checkerboard() -> CompiledModel {
-    let rules = checkerboard_rules();
-    let freqs = FrequencyHints::new(checkerboard_frequencies());
-    CompiledModel {
-        adj_rules: rules,
-        frequency_hints: freqs,
-        num_patterns: 2,
-        num_directions: 4,
+    let pattern_dimensions = Dimensions::new([1, 1]).unwrap();
+    RuleModel {
+        patterns: vec![
+            Pattern {
+                samples: vec![0],
+                dimensions: pattern_dimensions,
+            },
+            Pattern {
+                samples: vec![1],
+                dimensions: pattern_dimensions,
+            },
+        ],
+        adjadency_rules: checkerboard_rules(),
+        frequency_hints: FrequencyHints::new(checkerboard_frequencies()),
+        num_directions: ALL_DIRECTIONS.len(),
+        pattern_dimensions,
     }
+    .compile()
+    .expect("checkerboard benchmark model should be valid")
 }
 
 fn run_config(width: u32, height: u32) -> SolverRunConfiguration {
