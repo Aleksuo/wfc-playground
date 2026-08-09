@@ -1,5 +1,10 @@
 use crate::{RuleModel, Solution, model::dimensions::Dimensions};
 
+/// A `N`-dimensional lattice of values constructed from an input. Palette contains the
+/// distinct values present in the input. Indices holds the original input as the palette indices.
+///
+/// This should be used at the start of the pipeline, feeding an example input using [`SampleLattice::encode_from_fn`].
+/// Then the output can be decoded from a [`Solution`] and a [`RuleModel`] using the [`SampleLattice::decode`] -method.
 pub struct SampleLattice<T, const N: usize> {
     sample_palette: Vec<T>,
     indices: Vec<u32>,
