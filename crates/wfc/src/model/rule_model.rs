@@ -243,7 +243,7 @@ mod tests {
         fn pattern(sample: u32) -> Pattern {
             Pattern {
                 samples: vec![sample],
-                dimensions: Dimensions::new([1,1]).unwrap(),
+                dimensions: Dimensions::new([1, 1]).unwrap(),
             }
         }
 
