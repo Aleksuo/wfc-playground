@@ -16,7 +16,7 @@ pub enum PatternError {
     PatternLargerThanInput,
 }
 
-pub fn create_pattern_model<T>(
+pub fn create_rule_model<T>(
     input: &SampleLattice<T, 2>,
     pattern_dimensions: &Dimensions<2>,
 ) -> Result<RuleModel, PatternError> {

@@ -2,7 +2,7 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use image::{GenericImageView, ImageReader};
 use wfc::{
     CompiledModel, ContradictionStrategy, Dimensions, SampleLattice, SolverRunConfiguration,
-    create_pattern_model, solve,
+    create_rule_model, solve,
 };
 
 const SEED: u64 = 10;
@@ -20,7 +20,7 @@ fn preprocess_creatures_image() -> CompiledModel {
         SampleLattice::encode_from_fn(input_dimensions, |[x, y]| input_img.get_pixel(x, y));
 
     let pattern_dimensions = Dimensions::new([4, 4]).expect("4x4 is non-empty");
-    let pattern_model = create_pattern_model(&sampled, &pattern_dimensions)
+    let pattern_model = create_rule_model(&sampled, &pattern_dimensions)
         .expect("Pattern does not fit the input image");
     pattern_model
         .compile()

@@ -13,4 +13,4 @@ pub use crate::model::{
     solution::Solution,
     solver_run_configuration::{ContradictionStrategy, SolverError, SolverRunConfiguration},
 };
-pub use crate::preprocessing::{PatternError, create_pattern_model};
+pub use crate::preprocessing::{PatternError, create_rule_model};

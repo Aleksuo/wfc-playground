@@ -3,7 +3,7 @@ use std::{num::NonZeroU32, process::ExitCode};
 use image::{GenericImageView, ImageReader, RgbaImage};
 
 use wfc::{
-    ContradictionStrategy, Dimensions, SampleLattice, SolverRunConfiguration, create_pattern_model,
+    ContradictionStrategy, Dimensions, SampleLattice, SolverRunConfiguration, create_rule_model,
     solve,
 };
 
@@ -18,7 +18,7 @@ fn main() -> ExitCode {
     let sampled = SampleLattice::encode_from_fn(input_dims, |[x, y]| input_img.get_pixel(x, y));
 
     let pattern_dimensions = Dimensions::new([4, 4]).unwrap();
-    let rule_model = create_pattern_model(&sampled, &pattern_dimensions)
+    let rule_model = create_rule_model(&sampled, &pattern_dimensions)
         .expect("Pattern does not fit the input image");
 
     let grid_width = 64;
