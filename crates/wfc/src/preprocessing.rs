@@ -21,9 +21,7 @@ pub fn create_pattern_model<T>(
     pattern_dimensions: &Dimensions<2>,
 ) -> Result<RuleModel, PatternError> {
     let (patterns, frequency_hints) = find_patterns(pattern_dimensions, input)?;
-    // print_patterns(&patterns, &frequency_hints);
     let adjadency_rules = recognize_adjadency_rules(&patterns);
-    // print_adjadency_rule(&adjadency_rules);
     Ok(RuleModel {
         patterns,
         adjadency_rules,
@@ -109,44 +107,6 @@ fn recognize_adjadency_rules(patterns: &[Pattern]) -> AdjadencyRules {
         }
     }
     rules
-}
-
-#[allow(dead_code)]
-fn print_patterns(patterns: &[Pattern], frequencies: &FrequencyHints) {
-    println!("Found {} unique patterns:", patterns.len());
-    for (i, pattern) in patterns.iter().enumerate() {
-        let freq = frequencies.weights.get(i).unwrap_or(&0);
-        println!("  Pattern {} (freq: {}):", i, freq);
-        let [width, height] = pattern.dimensions.get();
-        for y in 0..height {
-            print!("    ");
-            for x in 0..width {
-                let idx = (x + y * width) as usize;
-                print!("{:2} ", pattern.samples[idx]);
-            }
-            println!();
-        }
-    }
-}
-
-#[allow(dead_code)]
-fn print_sampled_input(width: u32, height: u32, sample_arr: &[u16]) {
-    println!("Sampled input:");
-    for i in 0..height {
-        for j in 0..width {
-            let index = j + i * height;
-            print!("{} ", sample_arr[index as usize]);
-        }
-        println!();
-    }
-}
-
-#[allow(dead_code)]
-fn print_adjadency_rule(adj_rules: &AdjadencyRules) {
-    println!("Printing found rules:");
-    for (i, rule) in adj_rules.iter().enumerate() {
-        println!("{}: {:?}", i, rule);
-    }
 }
 
 #[cfg(test)]
