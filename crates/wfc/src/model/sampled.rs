@@ -1,12 +1,12 @@
 use crate::{RuleModel, Solution, model::dimensions::Dimensions};
 
-pub struct Sampled<T, const N: usize> {
+pub struct SampleLattice<T, const N: usize> {
     sample_palette: Vec<T>,
     indices: Vec<u32>,
     dimensions: Dimensions<N>,
 }
 
-impl<T, const N: usize> Sampled<T, N> {
+impl<T, const N: usize> SampleLattice<T, N> {
     pub fn dimensions(&self) -> &Dimensions<N> {
         &self.dimensions
     }
@@ -24,8 +24,11 @@ impl<T, const N: usize> Sampled<T, N> {
     }
 }
 
-impl<T: Eq, const N: usize> Sampled<T, N> {
-    pub fn from_fn(dimensions: Dimensions<N>, mut value_at: impl FnMut([u32; N]) -> T) -> Self {
+impl<T: Eq, const N: usize> SampleLattice<T, N> {
+    pub fn encode_from_fn(
+        dimensions: Dimensions<N>,
+        mut value_at: impl FnMut([u32; N]) -> T,
+    ) -> Self {
         let total = dimensions.total();
         let mut indices: Vec<u32> = Vec::with_capacity(total);
         let mut sample_palette: Vec<T> = vec![];
@@ -40,7 +43,7 @@ impl<T: Eq, const N: usize> Sampled<T, N> {
             };
             indices.push(palette_index as u32);
         }
-        Sampled {
+        SampleLattice {
             sample_palette,
             indices,
             dimensions,
@@ -48,8 +51,8 @@ impl<T: Eq, const N: usize> Sampled<T, N> {
     }
 }
 
-impl<T: Clone> Sampled<T, 2> {
-    pub fn decode(&self, solution: &Solution, rule_model: &RuleModel) -> Sampled<T, 2> {
+impl<T: Clone> SampleLattice<T, 2> {
+    pub fn decode(&self, solution: &Solution, rule_model: &RuleModel) -> SampleLattice<T, 2> {
         let grid = solution.output_dimensions;
         let RuleModel {
             patterns,
@@ -81,7 +84,7 @@ impl<T: Clone> Sampled<T, 2> {
                 }
             }
         }
-        Sampled {
+        SampleLattice {
             sample_palette: self.sample_palette.clone(),
             indices,
             dimensions: output_dimensions,
@@ -98,9 +101,9 @@ mod tests {
 
         const SAMPLE_VALUES: [u32; 9] = [0, 1, 2, 2, 0, 1, 1, 2, 0];
 
-        fn sample_3x3() -> Sampled<u32, 2> {
+        fn sample_3x3() -> SampleLattice<u32, 2> {
             let dimensions = Dimensions::new([3, 3]).expect("3x3 is non-empty");
-            Sampled::from_fn(dimensions, |coord| {
+            SampleLattice::encode_from_fn(dimensions, |coord| {
                 SAMPLE_VALUES[dimensions.index_of(coord)]
             })
         }
@@ -118,7 +121,7 @@ mod tests {
             let dimensions = Dimensions::new([3, 2]).expect("3x2 is non-empty");
             let mut visited = Vec::new();
 
-            Sampled::from_fn(dimensions, |coord| {
+            SampleLattice::encode_from_fn(dimensions, |coord| {
                 visited.push(coord);
                 0u32
             });
@@ -143,10 +146,10 @@ mod tests {
         use super::*;
         use crate::model::{pattern::Pattern, rule_model::FrequencyHints};
 
-        fn input() -> Sampled<u32, 2> {
+        fn input() -> SampleLattice<u32, 2> {
             const VALUES: [u32; 4] = [10, 20, 30, 40];
             let dimensions = Dimensions::new([2, 2]).expect("2x2 is non-empty");
-            Sampled::from_fn(dimensions, |coord| VALUES[dimensions.index_of(coord)])
+            SampleLattice::encode_from_fn(dimensions, |coord| VALUES[dimensions.index_of(coord)])
         }
 
         fn model_with(samples: Vec<u32>) -> RuleModel {

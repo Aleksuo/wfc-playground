@@ -5,7 +5,7 @@ use crate::model::{
     direction::ALL_DIRECTIONS,
     pattern::Pattern,
     rule_model::{AdjadencyRules, FrequencyHints, RuleModel},
-    sampled::Sampled,
+    sampled::SampleLattice,
     simple_bit_set::SimpleBitSet,
 };
 
@@ -17,7 +17,7 @@ pub enum PatternError {
 }
 
 pub fn create_pattern_model<T>(
-    input: &Sampled<T, 2>,
+    input: &SampleLattice<T, 2>,
     pattern_dimensions: &Dimensions<2>,
 ) -> Result<RuleModel, PatternError> {
     let (patterns, frequency_hints) = find_patterns(pattern_dimensions, input)?;
@@ -35,7 +35,7 @@ pub fn create_pattern_model<T>(
 
 fn find_patterns<T>(
     pattern_dimensions: &Dimensions<2>,
-    sampled_input: &Sampled<T, 2>,
+    sampled_input: &SampleLattice<T, 2>,
 ) -> Result<(Vec<Pattern>, FrequencyHints), PatternError> {
     // BTreeSet return the patterns Ord sorted, making the vec conversion deterministic.
     let mut patterns: BTreeSet<Pattern> = BTreeSet::new();
@@ -154,9 +154,9 @@ mod tests {
     use super::*;
     const SAMPLE_VALUES: [u32; 9] = [0, 1, 2, 2, 0, 1, 1, 2, 0];
 
-    fn sample_3x3() -> Sampled<u32, 2> {
+    fn sample_3x3() -> SampleLattice<u32, 2> {
         let dimensions = Dimensions::new([3, 3]).expect("3x3 is non-empty");
-        Sampled::from_fn(dimensions, |coord| {
+        SampleLattice::encode_from_fn(dimensions, |coord| {
             SAMPLE_VALUES[dimensions.index_of(coord)]
         })
     }

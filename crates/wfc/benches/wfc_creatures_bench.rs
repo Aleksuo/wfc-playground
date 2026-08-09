@@ -1,7 +1,7 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use image::{GenericImageView, ImageReader};
 use wfc::{
-    CompiledModel, ContradictionStrategy, Dimensions, Sampled, SolverRunConfiguration,
+    CompiledModel, ContradictionStrategy, Dimensions, SampleLattice, SolverRunConfiguration,
     create_pattern_model, solve,
 };
 
@@ -16,7 +16,7 @@ fn preprocess_creatures_image() -> CompiledModel {
         .expect("Unable to decode image");
     let (width, height) = input_img.dimensions();
     let input_dimensions = Dimensions::new([width, height]).expect("Input image is empty");
-    let sampled = Sampled::from_fn(input_dimensions, |[x, y]| input_img.get_pixel(x, y));
+    let sampled = SampleLattice::encode_from_fn(input_dimensions, |[x, y]| input_img.get_pixel(x, y));
 
     let pattern_dimensions = Dimensions::new([4, 4]).expect("4x4 is non-empty");
     let pattern_model = create_pattern_model(&sampled, &pattern_dimensions)

@@ -9,7 +9,7 @@ pub use crate::model::{
     dimensions::Dimensions,
     pattern::Pattern,
     rule_model::{AdjadencyRules, FrequencyHints, RuleModel},
-    sampled::Sampled,
+    sampled::SampleLattice,
     solution::Solution,
     solver_run_configuration::{ContradictionStrategy, SolverError, SolverRunConfiguration},
 };
