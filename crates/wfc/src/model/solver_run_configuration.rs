@@ -12,7 +12,7 @@ pub enum SolverError {
     AttemptsExhausted,
 }
 
-pub enum SolverRunError {
+pub(crate) enum SolverRunError {
     Contradiction,
 }
 
