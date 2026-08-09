@@ -1,11 +1,11 @@
 use crate::model::cell::Cell;
 
-pub struct WfcState {
+pub struct SolverState {
     pub cells: Vec<Cell>,
     pub uncollapsed_num: u32,
 }
 
-impl WfcState {
+impl SolverState {
     pub fn get_sampled_output(self) -> Vec<u32> {
         self.cells
             .iter()

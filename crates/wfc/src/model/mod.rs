@@ -8,4 +8,4 @@ pub mod sample_lattice;
 pub mod simple_bit_set;
 pub mod solution;
 pub mod solver_run_configuration;
-pub mod wfc_state;
+pub mod solver_state;

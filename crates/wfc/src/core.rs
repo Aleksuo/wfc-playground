@@ -10,7 +10,7 @@ use crate::{
         rule_model::FrequencyHints,
         simple_bit_set::SimpleBitSet,
         solver_run_configuration::*,
-        wfc_state::WfcState,
+        solver_state::SolverState,
     },
     util::entropy::calculate_shannon_entropy,
 };
@@ -60,7 +60,7 @@ fn run_attempt(
     let [output_width, output_height] = run_config.output_dimensions.get();
     let total_output = output_height * output_width;
     let mut rng = Xoshiro256PlusPlus::seed_from_u64(derived_seed);
-    let mut state = WfcState {
+    let mut state = SolverState {
         cells: Vec::new(),
         uncollapsed_num: total_output,
     };
