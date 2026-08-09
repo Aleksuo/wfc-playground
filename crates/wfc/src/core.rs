@@ -129,7 +129,6 @@ fn run_attempt(
                     }
 
                     match new_count {
-                        // TODO: Implement handling for contradictions
                         0 => return Err(SolverRunError::Contradiction),
                         1 => {
                             neighbor_cell.collapse(frequency_hints, &mut rng);
