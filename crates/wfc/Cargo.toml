@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-image = { workspace = true }
 rand = { workspace = true }
 
 [dev-dependencies]
 criterion = { version = "0.8", features = ["html_reports"] }
+image = { workspace = true }
 
 [[bench]]
 name = "wfc_simple_bench"
