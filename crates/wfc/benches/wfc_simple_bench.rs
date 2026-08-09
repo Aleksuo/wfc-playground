@@ -1,21 +1,26 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use wfc::core::{ContradictionStrategy, WfcConfig, wfc};
-use wfc::model::direction::ALL_DIRECTIONS;
-use wfc::model::pattern_model::FrequencyHints;
-use wfc::model::simple_bit_set::SimpleBitSet;
+use wfc::model::{direction::ALL_DIRECTIONS, simple_bit_set::SimpleBitSet};
+use wfc::{
+    CompiledModel, ContradictionStrategy, Dimensions, FrequencyHints, SolverRunConfiguration, solve,
+};
 
 const SEED: u64 = 12;
 
-fn preprocess_checkerboard(width: u32, height: u32) -> WfcConfig {
+fn preprocess_checkerboard() -> CompiledModel {
     let rules = checkerboard_rules();
     let freqs = FrequencyHints::new(checkerboard_frequencies());
-    WfcConfig {
-        output_width: width,
-        output_height: height,
+    CompiledModel {
         adj_rules: rules,
         frequency_hints: freqs,
         num_patterns: 2,
-        run_seed: SEED,
+        num_directions: 4,
+    }
+}
+
+fn run_config(width: u32, height: u32) -> SolverRunConfiguration {
+    SolverRunConfiguration {
+        output_dimensions: Dimensions::new([width, height]).unwrap(),
+        seed: SEED,
         contradiction_strategy: ContradictionStrategy::Fail,
     }
 }
@@ -38,23 +43,26 @@ fn checkerboard_frequencies() -> Vec<u32> {
 }
 
 fn bench_wfc_simple_8x8(c: &mut Criterion) {
-    let config = preprocess_checkerboard(8, 8);
+    let model = preprocess_checkerboard();
+    let run_config = run_config(8, 8);
     c.bench_function("wfc 8x8 checkerboard", |b| {
-        b.iter(|| wfc(&config));
+        b.iter(|| solve(&model, &run_config));
     });
 }
 
 fn bench_wfc_simple_16x16(c: &mut Criterion) {
-    let config = preprocess_checkerboard(16, 16);
+    let model = preprocess_checkerboard();
+    let run_config = run_config(16, 16);
     c.bench_function("wfc 16x16 checkerboard", |b| {
-        b.iter(|| wfc(&config));
+        b.iter(|| solve(&model, &run_config));
     });
 }
 
 fn bench_wfc_simple_32x32(c: &mut Criterion) {
-    let config = preprocess_checkerboard(32, 32);
+    let model = preprocess_checkerboard();
+    let run_config = run_config(32, 32);
     c.bench_function("wfc 32x32 checkerboard", |b| {
-        b.iter(|| wfc(&config));
+        b.iter(|| solve(&model, &run_config));
     });
 }
 

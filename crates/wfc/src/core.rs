@@ -1,87 +1,72 @@
 use rand::{prelude::*, rngs::Xoshiro256PlusPlus};
-use std::{collections::VecDeque, num::NonZeroU32};
+use std::collections::VecDeque;
 
 use crate::{
-    core::ContradictionStrategy::{Fail, Retry},
+    Solution,
     model::{
         cell::Cell,
+        compiled_model::CompiledModel,
         direction::{ALL_DIRECTIONS, Direction},
-        pattern_model::{AdjadencyRules, FrequencyHints},
+        rule_model::FrequencyHints,
         simple_bit_set::SimpleBitSet,
-        wfc_state::WfcState,
+        solver_run_configuration::*,
+        solver_state::SolverState,
     },
     util::entropy::calculate_shannon_entropy,
 };
 
-pub enum ContradictionStrategy {
-    Fail,
-    Retry { max_attempts: NonZeroU32 },
-}
-
-#[derive(Debug)]
-pub enum WfcError {
-    AttemptsExhausted,
-}
-
-enum WfcRunError {
-    Contradiction,
-}
-
-pub struct WfcConfig {
-    pub output_width: u32,
-    pub output_height: u32,
-    pub adj_rules: AdjadencyRules,
-    pub frequency_hints: FrequencyHints,
-    pub num_patterns: usize,
-    pub run_seed: u64,
-    pub contradiction_strategy: ContradictionStrategy,
-}
-
-pub fn wfc(config: &WfcConfig) -> Result<Vec<u16>, WfcError> {
-    run_with_contradiction_strategy(config.run_seed, &config.contradiction_strategy, |seed| {
-        run_attempt(config, seed)
-    })
+pub fn solve(
+    model: &CompiledModel,
+    run_config: &SolverRunConfiguration,
+) -> Result<Solution, SolverError> {
+    run_with_contradiction_strategy(
+        run_config.seed,
+        &run_config.contradiction_strategy,
+        |derived_seed| run_attempt(model, run_config, derived_seed),
+    )
 }
 
 fn run_with_contradiction_strategy(
     run_seed: u64,
     contradiction_strategy: &ContradictionStrategy,
-    mut run_attempt: impl FnMut(u64) -> Result<Vec<u16>, WfcRunError>,
-) -> Result<Vec<u16>, WfcError> {
+    mut run_attempt: impl FnMut(u64) -> Result<Solution, SolverRunError>,
+) -> Result<Solution, SolverError> {
     let max_attempts = match contradiction_strategy {
-        Fail => 1,
-        Retry { max_attempts } => max_attempts.get(),
+        ContradictionStrategy::Fail => 1,
+        ContradictionStrategy::Retry { max_attempts } => max_attempts.get(),
     };
 
     for attempt_index in 0..max_attempts {
-        let seed = run_seed.wrapping_add(attempt_index as u64);
-        if let Ok(res) = run_attempt(seed) {
+        let derived_seed = run_seed.wrapping_add(attempt_index as u64);
+        if let Ok(res) = run_attempt(derived_seed) {
             return Ok(res);
         }
     }
 
-    Err(WfcError::AttemptsExhausted)
+    Err(SolverError::AttemptsExhausted)
 }
 
-fn run_attempt(config: &WfcConfig, seed: u64) -> Result<Vec<u16>, WfcRunError> {
-    let WfcConfig {
-        output_width,
-        output_height,
+fn run_attempt(
+    model: &CompiledModel,
+    run_config: &SolverRunConfiguration,
+    derived_seed: u64,
+) -> Result<Solution, SolverRunError> {
+    let CompiledModel {
         adj_rules,
         frequency_hints,
         num_patterns,
-        run_seed: _,
-        contradiction_strategy: _,
-    } = config;
-    let mut rng = Xoshiro256PlusPlus::seed_from_u64(seed);
-    let mut state = WfcState {
+        num_directions,
+    } = model;
+    let [output_width, output_height] = run_config.output_dimensions.get();
+    let total_output = output_height * output_width;
+    let mut rng = Xoshiro256PlusPlus::seed_from_u64(derived_seed);
+    let mut state = SolverState {
         cells: Vec::new(),
-        uncollapsed_num: output_width * output_height,
-        adjadency_rules: adj_rules.clone(),
+        uncollapsed_num: total_output,
     };
     let initial_possible_values = SimpleBitSet::full(*num_patterns);
     let initial_entropy = calculate_initial_entropy(frequency_hints);
-    for _ in 0..(output_height * output_width) {
+    for _ in 0..(total_output) {
         state.cells.push(Cell::new(
             initial_possible_values.clone(),
             initial_entropy,
@@ -117,19 +102,17 @@ fn run_attempt(config: &WfcConfig, seed: u64) -> Result<Vec<u16>, WfcRunError> {
             union_map.iter_mut().for_each(|f| f.clear_all());
 
             // Construct union map of all possible values in each direction for the cell
-            let num_directions = ALL_DIRECTIONS.len();
             for possible in next_cell.possible_values.into_iter() {
                 for direction in ALL_DIRECTIONS {
                     let dir_set = &mut union_map[direction as usize];
                     let rule_idx = possible * num_directions + direction as usize;
-                    dir_set.union_with(&state.adjadency_rules[rule_idx]);
+                    dir_set.union_with(&adj_rules[rule_idx]);
                 }
             }
             // Iterate neigbors and intersect with the union set
-            for (dir, neighbor_idx) in
-                get_neighbor_indices(next_prop, *output_width, *output_height)
-                    .iter()
-                    .enumerate()
+            for (dir, neighbor_idx) in get_neighbor_indices(next_prop, output_width, output_height)
+                .iter()
+                .enumerate()
             {
                 if let Some(n_idx) = neighbor_idx {
                     let neighbor_cell = &mut state.cells[*n_idx];
@@ -146,8 +129,7 @@ fn run_attempt(config: &WfcConfig, seed: u64) -> Result<Vec<u16>, WfcRunError> {
                     }
 
                     match new_count {
-                        // TODO: Implement handling for contradictions
-                        0 => return Err(WfcRunError::Contradiction),
+                        0 => return Err(SolverRunError::Contradiction),
                         1 => {
                             neighbor_cell.collapse(frequency_hints, &mut rng);
                             state.uncollapsed_num -= 1;
@@ -164,7 +146,10 @@ fn run_attempt(config: &WfcConfig, seed: u64) -> Result<Vec<u16>, WfcRunError> {
             }
         }
     }
-    Ok(state.get_sampled_output())
+    Ok(Solution {
+        output: state.get_sampled_output(),
+        output_dimensions: run_config.output_dimensions,
+    })
 }
 
 fn calculate_initial_entropy(frequency_hints: &FrequencyHints) -> f32 {
@@ -196,8 +181,11 @@ fn get_neighbor_indices(index: usize, width: u32, height: u32) -> [Option<usize>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::num::NonZeroU32;
 
     mod wfc {
+        use crate::Dimensions;
+
         use super::*;
 
         fn checkerboard_rules() -> Vec<SimpleBitSet> {
@@ -218,6 +206,13 @@ mod tests {
             rules
         }
 
+        fn stub_solution() -> Solution {
+            Solution {
+                output: vec![42],
+                output_dimensions: Dimensions::new([1, 1]).expect("1x1 is non-empty"),
+            }
+        }
+
         fn checkerboard_frequencies() -> Vec<u32> {
             vec![1, 1, 1, 1]
         }
@@ -231,19 +226,21 @@ mod tests {
             let height = 16;
 
             let num_checks = 5;
-            let config = WfcConfig {
-                output_width: width,
-                output_height: height,
+            let model = CompiledModel {
                 num_patterns: test_freqs.weights.len(),
                 adj_rules: test_ruleset,
                 frequency_hints: test_freqs,
-                run_seed,
+                num_directions: 4,
+            };
+            let run_config = SolverRunConfiguration {
+                output_dimensions: Dimensions::new([width, height]).unwrap(),
+                seed: run_seed,
                 contradiction_strategy: ContradictionStrategy::Fail,
             };
-            let first_run = wfc(&config).unwrap();
+            let first_run = solve(&model, &run_config).unwrap();
 
             for _ in 0..num_checks {
-                assert_eq!(first_run, wfc(&config).unwrap())
+                assert_eq!(first_run, solve(&model, &run_config).unwrap())
             }
         }
 
@@ -256,22 +253,26 @@ mod tests {
             let width = 16;
             let height = 16;
 
-            let config = WfcConfig {
-                output_width: width,
-                output_height: height,
+            let model = CompiledModel {
                 num_patterns: test_freqs.weights.len(),
                 adj_rules: test_ruleset,
                 frequency_hints: test_freqs,
-                run_seed: seed_1,
+                num_directions: 4,
+            };
+            let run_config = SolverRunConfiguration {
+                output_dimensions: Dimensions::new([width, height]).unwrap(),
+                seed: seed_1,
                 contradiction_strategy: ContradictionStrategy::Fail,
             };
-            let first_run = wfc(&config).unwrap();
+            let first_run = solve(&model, &run_config).unwrap();
 
-            let second_run = wfc(&WfcConfig {
-                run_seed: seed_2,
-                contradiction_strategy: ContradictionStrategy::Fail,
-                ..config
-            })
+            let second_run = solve(
+                &model,
+                &SolverRunConfiguration {
+                    seed: seed_2,
+                    ..run_config
+                },
+            )
             .unwrap();
 
             assert_ne!(first_run, second_run);
@@ -284,10 +285,10 @@ mod tests {
             let result =
                 run_with_contradiction_strategy(10, &ContradictionStrategy::Fail, |seed| {
                     attempted_seeds.push(seed);
-                    Err(WfcRunError::Contradiction)
+                    Err(SolverRunError::Contradiction)
                 });
 
-            assert!(matches!(result, Err(WfcError::AttemptsExhausted)));
+            assert!(matches!(result, Err(SolverError::AttemptsExhausted)));
             assert_eq!(attempted_seeds, vec![10]);
         }
 
@@ -301,13 +302,13 @@ mod tests {
             let result = run_with_contradiction_strategy(u64::MAX - 1, &strategy, |seed| {
                 attempted_seeds.push(seed);
                 if attempted_seeds.len() == 3 {
-                    Ok(vec![42])
+                    Ok(stub_solution())
                 } else {
-                    Err(WfcRunError::Contradiction)
+                    Err(SolverRunError::Contradiction)
                 }
             });
 
-            assert_eq!(result.unwrap(), vec![42]);
+            assert_eq!(result.unwrap(), stub_solution());
             assert_eq!(attempted_seeds, vec![u64::MAX - 1, u64::MAX, 0]);
         }
 
@@ -320,10 +321,10 @@ mod tests {
 
             let result = run_with_contradiction_strategy(10, &strategy, |seed| {
                 attempted_seeds.push(seed);
-                Err(WfcRunError::Contradiction)
+                Err(SolverRunError::Contradiction)
             });
 
-            assert!(matches!(result, Err(WfcError::AttemptsExhausted)));
+            assert!(matches!(result, Err(SolverError::AttemptsExhausted)));
             assert_eq!(attempted_seeds, vec![10, 11, 12]);
         }
     }

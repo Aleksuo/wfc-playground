@@ -1,6 +1,11 @@
 pub mod cell;
+pub mod compiled_model;
+pub mod dimensions;
 pub mod direction;
 pub mod pattern;
-pub mod pattern_model;
+pub mod rule_model;
+pub mod sample_lattice;
 pub mod simple_bit_set;
-pub mod wfc_state;
+pub mod solution;
+pub mod solver_run_configuration;
+pub mod solver_state;

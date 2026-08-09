@@ -1,80 +1,59 @@
 use std::collections::{BTreeSet, HashMap};
 
-use image::{DynamicImage, Rgb};
-
 use crate::model::{
+    dimensions::Dimensions,
     direction::ALL_DIRECTIONS,
     pattern::Pattern,
-    pattern_model::{AdjadencyRules, FrequencyHints, PatternModel},
+    rule_model::{AdjadencyRules, FrequencyHints, RuleModel},
+    sample_lattice::SampleLattice,
     simple_bit_set::SimpleBitSet,
 };
 
-pub fn create_pattern_model(
-    img: DynamicImage,
-    pattern_width: u32,
-    pattern_height: u32,
-) -> PatternModel {
-    let (width, height, sample, palette) = sample_dynamic_image(&img);
-    // print_sampled_input(width, height, &sample);
-    let (patterns, frequency_hints) =
-        find_patterns(pattern_width, pattern_height, width, height, &sample);
-    // print_patterns(&patterns, &frequency_hints);
+#[derive(Debug, PartialEq, Eq)]
+pub enum PatternError {
+    /// The requested pattern is longer than the input on at least one axis, so the input
+    /// contains no window to sample.
+    PatternLargerThanInput,
+}
+
+pub fn create_rule_model<T>(
+    input: &SampleLattice<T, 2>,
+    pattern_dimensions: &Dimensions<2>,
+) -> Result<RuleModel, PatternError> {
+    let (patterns, frequency_hints) = find_patterns(pattern_dimensions, input)?;
     let adjadency_rules = recognize_adjadency_rules(&patterns);
-    // print_adjadency_rule(&adjadency_rules);
-    PatternModel {
-        palette,
+    Ok(RuleModel {
         patterns,
         adjadency_rules,
         frequency_hints,
-        pattern_height,
-        pattern_width,
-    }
+        num_directions: ALL_DIRECTIONS.len(),
+        pattern_dimensions: *pattern_dimensions,
+    })
 }
 
-fn sample_dynamic_image(img: &DynamicImage) -> (u32, u32, Vec<u16>, Vec<Rgb<u8>>) {
-    let img = img.to_rgb8();
-    let (width, height) = img.dimensions();
-    let mut sample: Vec<u16> = vec![0; (height * width) as usize];
-    let mut palette: Vec<Rgb<u8>> = vec![];
-    for (x, y, pixel) in img.enumerate_pixels() {
-        let k = match palette.iter().position(|c| c == pixel) {
-            Some(i) => i,
-            None => {
-                palette.push(*pixel);
-                palette.len() - 1
-            }
-        };
-        let index = x + y * width;
-        sample[index as usize] = k as u16;
-    }
-    (width, height, sample, palette)
-}
-
-fn find_patterns(
-    pattern_width: u32,
-    pattern_height: u32,
-    input_width: u32,
-    input_height: u32,
-    sampled_input: &[u16],
-) -> (Vec<Pattern>, FrequencyHints) {
+fn find_patterns<T>(
+    pattern_dimensions: &Dimensions<2>,
+    sampled_input: &SampleLattice<T, 2>,
+) -> Result<(Vec<Pattern>, FrequencyHints), PatternError> {
     // BTreeSet return the patterns Ord sorted, making the vec conversion deterministic.
     let mut patterns: BTreeSet<Pattern> = BTreeSet::new();
     let mut pattern_frequencies: HashMap<Pattern, u32> = HashMap::new();
-    let max_width = input_width - pattern_width + 1;
-    let max_height = input_height - pattern_height + 1;
-    for i in 0..max_height {
-        for j in 0..max_width {
+    let windows = sampled_input
+        .dimensions()
+        .windows(*pattern_dimensions)
+        .ok_or(PatternError::PatternLargerThanInput)?;
+    for i in 0..windows.get_axis(1) {
+        for j in 0..windows.get_axis(0) {
             let mut pattern_samples = Vec::new();
-            for y in 0..pattern_height {
-                for x in 0..pattern_width {
-                    let sample_idx = (j + x) + ((i + y) * input_width);
-                    pattern_samples.push(sampled_input[sample_idx as usize]);
+            for y in 0..pattern_dimensions.get_axis(1) {
+                for x in 0..pattern_dimensions.get_axis(0) {
+                    let sample_idx = sampled_input.dimensions().index_of([j + x, i + y]);
+                    pattern_samples.push(sampled_input.indices()[sample_idx]);
                 }
             }
             let new_pattern = Pattern {
                 samples: pattern_samples,
-                width: pattern_width,
-                height: pattern_height,
+                dimensions: *pattern_dimensions,
             };
             let base_mirrored = new_pattern.rowwise_mirror();
             let pat_rot_90 = new_pattern.rotate(90.0);
@@ -110,7 +89,7 @@ fn find_patterns(
         .iter()
         .map(|p| *pattern_frequencies.get(p).unwrap())
         .collect();
-    (pattern_vec, FrequencyHints::new(frequency_vec))
+    Ok((pattern_vec, FrequencyHints::new(frequency_vec)))
 }
 
 fn recognize_adjadency_rules(patterns: &[Pattern]) -> AdjadencyRules {
@@ -130,56 +109,63 @@ fn recognize_adjadency_rules(patterns: &[Pattern]) -> AdjadencyRules {
     rules
 }
 
-#[allow(dead_code)]
-fn print_patterns(patterns: &[Pattern], frequencies: &FrequencyHints) {
-    println!("Found {} unique patterns:", patterns.len());
-    for (i, pattern) in patterns.iter().enumerate() {
-        let freq = frequencies.weights.get(i).unwrap_or(&0);
-        println!("  Pattern {} (freq: {}):", i, freq);
-        for y in 0..pattern.height {
-            print!("    ");
-            for x in 0..pattern.width {
-                let idx = (x + y * pattern.width) as usize;
-                print!("{:2} ", pattern.samples[idx]);
-            }
-            println!();
-        }
-    }
-}
-
-#[allow(dead_code)]
-fn print_sampled_input(width: u32, height: u32, sample_arr: &[u16]) {
-    println!("Sampled input:");
-    for i in 0..height {
-        for j in 0..width {
-            let index = j + i * height;
-            print!("{} ", sample_arr[index as usize]);
-        }
-        println!();
-    }
-}
-
-#[allow(dead_code)]
-fn print_adjadency_rule(adj_rules: &AdjadencyRules) {
-    println!("Printing found rules:");
-    for (i, rule) in adj_rules.iter().enumerate() {
-        println!("{}: {:?}", i, rule);
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    const SAMPLE_VALUES: [u32; 9] = [0, 1, 2, 2, 0, 1, 1, 2, 0];
+
+    fn sample_3x3() -> SampleLattice<u32, 2> {
+        let dimensions = Dimensions::new([3, 3]).expect("3x3 is non-empty");
+        SampleLattice::encode_from_fn(dimensions, |coord| {
+            SAMPLE_VALUES[dimensions.index_of(coord)]
+        })
+    }
+
+    #[test]
+    fn extracts_a_pattern_that_fills_the_input() {
+        let pattern_dimensions = Dimensions::new([3, 3]).expect("3x3 is non-empty");
+        let sampled_input = sample_3x3();
+
+        let (patterns, _) = find_patterns(&pattern_dimensions, &sampled_input).expect("3x3 fits");
+
+        assert!(patterns.iter().any(|p| p.samples == SAMPLE_VALUES));
+    }
+
+    #[test]
+    fn rejects_a_pattern_larger_than_the_input() {
+        let pattern_dimensions = Dimensions::new([4, 4]).expect("4x4 is non-empty");
+        let sampled_input = sample_3x3();
+
+        let result = find_patterns(&pattern_dimensions, &sampled_input);
+
+        assert_eq!(result.err(), Some(PatternError::PatternLargerThanInput));
+    }
+
+    #[test]
+    fn rejects_a_pattern_larger_than_the_input_on_one_axis() {
+        let sampled_input = sample_3x3();
+
+        for lengths in [[4, 2], [2, 4]] {
+            let pattern_dimensions = Dimensions::new(lengths).expect("non-empty");
+
+            let result = find_patterns(&pattern_dimensions, &sampled_input);
+
+            assert_eq!(result.err(), Some(PatternError::PatternLargerThanInput));
+        }
+    }
 
     #[test]
     fn pattern_order_is_deterministic() {
-        let sampled_input = vec![0, 1, 2, 2, 0, 1, 1, 2, 0];
-        let (test_patterns, test_frequencies) = find_patterns(2, 2, 3, 3, &sampled_input);
+        let pattern_dimensions = Dimensions::new([2, 2]).expect("2x2 is non-empty");
+        let sampled_input = sample_3x3();
+        let (test_patterns, test_frequencies) =
+            find_patterns(&pattern_dimensions, &sampled_input).expect("2x2 fits");
 
         assert!(test_patterns.len() > 1);
 
         for _ in 0..5 {
-            let (patterns, frequencies) = find_patterns(2, 2, 3, 3, &sampled_input);
+            let (patterns, frequencies) =
+                find_patterns(&pattern_dimensions, &sampled_input).expect("2x2 fits");
 
             assert!(test_patterns == patterns);
             assert_eq!(test_frequencies, frequencies);

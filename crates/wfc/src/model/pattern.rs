@@ -1,20 +1,20 @@
-use crate::model::direction::Direction;
+use crate::{Dimensions, model::direction::Direction};
 
 #[derive(Hash, PartialEq, Eq, Clone, PartialOrd, Ord)]
 pub struct Pattern {
-    pub samples: Vec<u16>,
-    pub width: u32,
-    pub height: u32,
+    pub samples: Vec<u32>,
+    pub dimensions: Dimensions<2>,
 }
 
 impl Pattern {
     pub fn compatible(&self, other: &Pattern, direction: &Direction) -> bool {
+        let [width, height] = self.dimensions.get();
         match direction {
             Direction::Up => {
-                for row in 0..self.height - 1 {
-                    for col in 0..self.width {
-                        let self_idx = row * self.width + col;
-                        let other_idx = (row + 1) * other.width + col;
+                for row in 0..height - 1 {
+                    for col in 0..width {
+                        let self_idx = row * width + col;
+                        let other_idx = (row + 1) * width + col;
                         if self.samples[self_idx as usize] != other.samples[other_idx as usize] {
                             return false;
                         }
@@ -23,10 +23,10 @@ impl Pattern {
                 true
             }
             Direction::Down => {
-                for row in 1..self.height {
-                    for col in 0..self.width {
-                        let self_idx = row * self.width + col;
-                        let other_idx = (row - 1) * other.width + col;
+                for row in 1..height {
+                    for col in 0..width {
+                        let self_idx = row * width + col;
+                        let other_idx = (row - 1) * width + col;
                         if self.samples[self_idx as usize] != other.samples[other_idx as usize] {
                             return false;
                         }
@@ -35,10 +35,10 @@ impl Pattern {
                 true
             }
             Direction::Right => {
-                for row in 0..self.height {
-                    for col in 1..self.width {
-                        let self_idx = row * self.width + col;
-                        let other_idx = row * other.width + (col - 1);
+                for row in 0..height {
+                    for col in 1..width {
+                        let self_idx = row * width + col;
+                        let other_idx = row * width + (col - 1);
                         if self.samples[self_idx as usize] != other.samples[other_idx as usize] {
                             return false;
                         }
@@ -47,10 +47,10 @@ impl Pattern {
                 true
             }
             Direction::Left => {
-                for row in 0..self.height {
-                    for col in 0..self.width - 1 {
-                        let self_idx = row * self.width + col;
-                        let other_idx = row * other.width + (col + 1);
+                for row in 0..height {
+                    for col in 0..width - 1 {
+                        let self_idx = row * width + col;
+                        let other_idx = row * width + (col + 1);
                         if self.samples[self_idx as usize] != other.samples[other_idx as usize] {
                             return false;
                         }
@@ -63,27 +63,28 @@ impl Pattern {
 
     pub fn rowwise_mirror(&self) -> Self {
         let mut res_vec = Vec::with_capacity(self.samples.len());
-        for y in 0..self.height {
-            for x in (0..self.width).rev() {
-                let sample_idx = self.width * y + x;
+        let [width, height] = self.dimensions.get();
+        for y in 0..height {
+            for x in (0..width).rev() {
+                let sample_idx = width * y + x;
                 let sample = self.samples[sample_idx as usize];
                 res_vec.push(sample);
             }
         }
         Pattern {
-            width: self.width,
-            height: self.height,
+            dimensions: self.dimensions,
             samples: res_vec,
         }
     }
 
     pub fn rotate(&self, degrees: f32) -> Self {
+        let [width, height] = self.dimensions.get();
         let mut rotated_samples = vec![0; self.samples.len()];
         let radians = degrees.to_radians();
         let rad_sin = radians.sin();
         let rad_cos = radians.cos();
-        let max_width = (self.width - 1) as f32;
-        let max_height = (self.height - 1) as f32;
+        let max_width = (width - 1) as f32;
+        let max_height = (height - 1) as f32;
 
         // Translate rotated values to the positive range using minimums from corners
         let min_corner_x = {
@@ -100,22 +101,21 @@ impl Pattern {
             let c_3_y = max_width * rad_sin + max_height * rad_cos;
             c_0_y.min(c_1_y).min(c_2_y).min(c_3_y)
         };
-        for y in 0..self.height {
-            for x in 0..self.width {
-                let sample_idx = y * self.width + x;
+        for y in 0..height {
+            for x in 0..width {
+                let sample_idx = y * width + x;
                 let sample = self.samples[sample_idx as usize];
                 let f_x = x as f32;
                 let f_y = y as f32;
                 let rot_x = (f_x * rad_cos - f_y * rad_sin) - min_corner_x;
                 let rot_y = (f_x * rad_sin + f_y * rad_cos) - min_corner_y;
-                let rot_idx = (rot_x.round() as u32) + (rot_y.round() as u32) * self.width;
+                let rot_idx = (rot_x.round() as u32) + (rot_y.round() as u32) * width;
                 rotated_samples[rot_idx as usize] = sample;
             }
         }
         Pattern {
             samples: rotated_samples,
-            height: self.height,
-            width: self.width,
+            dimensions: self.dimensions,
         }
     }
 }
@@ -131,13 +131,14 @@ mod tests {
         fn reverses_each_row() {
             let test_pattern = Pattern {
                 samples: vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
-                height: 3,
-                width: 3,
+                dimensions: Dimensions::new([3, 3]).unwrap(),
             };
             let result = test_pattern.rowwise_mirror();
 
-            assert_eq!(result.height, test_pattern.height);
-            assert_eq!(result.width, test_pattern.width);
+            let [test_pattern_width, test_pattern_height] = test_pattern.dimensions.get();
+            let [result_width, result_height] = result.dimensions.get();
+            assert_eq!(result_height, test_pattern_height);
+            assert_eq!(result_width, test_pattern_width);
             assert_eq!(result.samples, vec![3, 2, 1, 6, 5, 4, 9, 8, 7]);
         }
     }
@@ -149,8 +150,7 @@ mod tests {
         fn can_rotate_in_90_deg_increments() {
             let test_pattern = Pattern {
                 samples: vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
-                height: 3,
-                width: 3,
+                dimensions: Dimensions::new([3, 3]).unwrap(),
             };
 
             let result_90 = test_pattern.rotate(90.0);
